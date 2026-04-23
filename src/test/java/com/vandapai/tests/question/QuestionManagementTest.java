@@ -10,17 +10,22 @@ import org.testng.annotations.Test;
 
 public class QuestionManagementTest extends BaseTest {
 
-    @Test
-    public void AT_QLCH_001_NavigateToCreateBankSuccessfully() {
+    private QuestionManagementPage goToCreateQuestionBankPage() {
         LoginPage loginPage = new LoginPage(driver);
         SidebarComponent sidebar = new SidebarComponent(driver);
         QuestionManagementPage questionManagementPage = new QuestionManagementPage(driver);
 
         loginPage.login(ConfigReader.get("username"), ConfigReader.get("password"));
         sidebar.openQuestionManagement();
-
         questionManagementPage.selectSubjectByVisibleText("Kho và Khai Phá Dữ Liệu");
         questionManagementPage.clickCreateNewBank();
+
+        return questionManagementPage;
+    }
+
+    @Test
+    public void AT_QLCH_001_NavigateToCreateBankSuccessfully() {
+        QuestionManagementPage questionManagementPage = goToCreateQuestionBankPage();
 
         Assert.assertTrue(questionManagementPage.isQuestionBankSectionDisplayed(),
                 "Khu vực Ngân hàng câu hỏi không hiển thị");
@@ -37,25 +42,32 @@ public class QuestionManagementTest extends BaseTest {
 
     @Test
     public void AT_QLCH_002_UploadValidPdfSuccessfully() {
-        LoginPage loginPage = new LoginPage(driver);
-        SidebarComponent sidebar = new SidebarComponent(driver);
-        QuestionManagementPage questionManagementPage = new QuestionManagementPage(driver);
-
-        loginPage.login(ConfigReader.get("username"), ConfigReader.get("password"));
-        sidebar.openQuestionManagement();
-
-        questionManagementPage.selectSubjectByVisibleText("Kho và Khai Phá Dữ Liệu");
-        questionManagementPage.clickCreateNewBank();
+        QuestionManagementPage questionManagementPage = goToCreateQuestionBankPage();
 
         String filePath = "C:\\Users\\DELL\\Downloads\\Test Data\\Data Mining and Data Warehousing.pdf";
 
         questionManagementPage.clickAddDocumentButton();
-        questionManagementPage.uploadPdfFile(filePath);
+        questionManagementPage.uploadFile(filePath);
         questionManagementPage.waitForUploadSuccessToast();
+    }
+
+    @Test
+    public void AT_QLCH_003_DoNotAllowUploadInvalidFileType() {
+        QuestionManagementPage questionManagementPage = goToCreateQuestionBankPage();
+
+        String filePath = "C:\\Users\\DELL\\Downloads\\Test Data\\CHUONG1.csv";
+
+        questionManagementPage.clickAddDocumentButton();
+        questionManagementPage.uploadFile(filePath);
 
         Assert.assertTrue(
-                questionManagementPage.isUploadSuccessToastDisplayed(),
-                "Không hiển thị toast upload tài liệu thành công"
+                questionManagementPage.isUploadErrorToastDisplayed("Định dạng file không hợp lệ"),
+                "Không hiển thị thông báo lỗi định dạng file không hợp lệ"
+        );
+
+        Assert.assertTrue(
+                questionManagementPage.isEmptyDocumentMessageDisplayed(),
+                "Danh sách tài liệu không còn ở trạng thái 'Chưa có tài liệu nào'"
         );
     }
 }

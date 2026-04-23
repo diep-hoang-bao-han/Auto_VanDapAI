@@ -19,34 +19,30 @@ public class QuestionManagementPage {
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(20));
     }
 
-    // TC001, TC002
+    // Flow chung
     private final By subjectDropdown = By.id("subjectSelect");
     private final By createNewBankBtn = By.id("goDetailBtn");
-    private final By saveButton = By.id("saveBankBtnWrapper");
-    private final By addQuestionBtn = By.id("openAddQuestionModalBtn");
     private final By bankListContainer = By.id("bankListContainer");
 
     // TC001
+    private final By saveButton = By.id("saveBankBtnWrapper");
+    private final By addQuestionBtn = By.id("openAddQuestionModalBtn");
     private final By questionBankSection = By.xpath("//*[@id='qm2App']/div[2]/div[2]/div[2]/div[1]");
     private final By aiConfigSection = By.xpath("//*[@id='qm2App']/div[2]/div[2]/div[1]/div[2]");
 
-    // TC002
+    // TC002, TC003
     private final By addDocumentBtn = By.cssSelector("button[title='Thêm tài liệu']");
     private final By uploadFileInput = By.id("uploadFileInput");
-    private final By uploadSuccessToast = By.cssSelector("span.global-toast-message");
-    private final By closeUploadModalBtn = By.cssSelector("#uploadModal .qm2-dialog-close");
-    private final By firstDocumentCheckbox = By.cssSelector("input.doc-checkbox");
+    private final By uploadToast = By.cssSelector("span.global-toast-message");
+    private final By emptyDocumentMessage = By.cssSelector(".qm2-empty");
 
-    // TC001, TC002
     public void selectSubjectByVisibleText(String subjectText) {
         WebElement dropdown = wait.until(ExpectedConditions.presenceOfElementLocated(subjectDropdown));
         Select select = new Select(dropdown);
         select.selectByVisibleText(subjectText);
-
         wait.until(ExpectedConditions.visibilityOfElementLocated(bankListContainer));
     }
 
-    // TC001, TC002
     public void clickCreateNewBank() {
         WebElement button = wait.until(ExpectedConditions.presenceOfElementLocated(createNewBankBtn));
 
@@ -55,7 +51,6 @@ public class QuestionManagementPage {
         );
 
         wait.until(ExpectedConditions.visibilityOf(button));
-
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", button);
     }
 
@@ -64,22 +59,19 @@ public class QuestionManagementPage {
         return wait.until(ExpectedConditions.visibilityOfElementLocated(questionBankSection)).isDisplayed();
     }
 
-    // TC001
     public boolean isAIConfigSectionDisplayed() {
         return wait.until(ExpectedConditions.visibilityOfElementLocated(aiConfigSection)).isDisplayed();
     }
 
-    // TC001
     public boolean isSaveButtonDisplayed() {
         return wait.until(ExpectedConditions.visibilityOfElementLocated(saveButton)).isDisplayed();
     }
 
-    // TC001
     public boolean isAddQuestionButtonDisplayed() {
         return wait.until(ExpectedConditions.visibilityOfElementLocated(addQuestionBtn)).isDisplayed();
     }
 
-    // TC002
+    // TC002, TC003
     public void clickAddDocumentButton() {
         WebElement button = wait.until(ExpectedConditions.elementToBeClickable(addDocumentBtn));
         try {
@@ -89,46 +81,25 @@ public class QuestionManagementPage {
         }
     }
 
-    // TC002
-    public void uploadPdfFile(String filePath) {
+    public void uploadFile(String filePath) {
         WebElement input = wait.until(ExpectedConditions.presenceOfElementLocated(uploadFileInput));
         input.sendKeys(filePath);
     }
 
-    // TC002
     public void waitForUploadSuccessToast() {
-        wait.until(ExpectedConditions.visibilityOfElementLocated(uploadSuccessToast));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(uploadToast));
         wait.until(ExpectedConditions.textToBePresentInElementLocated(
-                uploadSuccessToast, "Upload tài liệu thành công"
+                uploadToast, "Upload tài liệu thành công"
         ));
     }
 
-    // TC002
-    public boolean isUploadSuccessToastDisplayed() {
-        return wait.until(ExpectedConditions.visibilityOfElementLocated(uploadSuccessToast)).isDisplayed();
+    public boolean isUploadErrorToastDisplayed(String expectedMessage) {
+        wait.until(ExpectedConditions.visibilityOfElementLocated(uploadToast));
+        String actualMessage = driver.findElement(uploadToast).getText().trim();
+        return actualMessage.contains(expectedMessage);
     }
 
-    // TC002
-    public void closeUploadModal() {
-        WebElement closeBtn = wait.until(ExpectedConditions.elementToBeClickable(closeUploadModalBtn));
-        try {
-            closeBtn.click();
-        } catch (Exception e) {
-            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", closeBtn);
-        }
-    }
-
-    // TC002
-    public void selectUploadedDocumentCheckbox() {
-        WebElement checkbox = wait.until(ExpectedConditions.elementToBeClickable(firstDocumentCheckbox));
-        if (!checkbox.isSelected()) {
-            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", checkbox);
-        }
-    }
-
-    // TC002
-    public boolean isDocumentCheckboxSelected() {
-        WebElement checkbox = wait.until(ExpectedConditions.visibilityOfElementLocated(firstDocumentCheckbox));
-        return checkbox.isSelected();
+    public boolean isEmptyDocumentMessageDisplayed() {
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(emptyDocumentMessage)).isDisplayed();
     }
 }

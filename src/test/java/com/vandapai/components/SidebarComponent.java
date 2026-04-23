@@ -34,14 +34,16 @@ public class SidebarComponent {
         By questionManagementLink = By.xpath("//*[@id='qna-dropdown']//a[contains(.,'Quản lý câu hỏi')]");
         WebElement link = wait.until(ExpectedConditions.visibilityOfElementLocated(questionManagementLink));
 
-        ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].scrollIntoView({block:'center'});", link
-        );
+        String href = link.getAttribute("href");
 
-        try {
-            link.click();
-        } catch (Exception e) {
-            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", link);
+        if (href != null && !href.trim().isEmpty()) {
+            driver.get(href);
+        } else {
+            try {
+                link.click();
+            } catch (Exception e) {
+                ((JavascriptExecutor) driver).executeScript("arguments[0].click();", link);
+            }
         }
 
         wait.until(ExpectedConditions.urlContains("/lecturer/questions"));
