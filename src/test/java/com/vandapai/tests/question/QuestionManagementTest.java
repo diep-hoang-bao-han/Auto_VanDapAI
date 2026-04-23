@@ -70,4 +70,16 @@ public class QuestionManagementTest extends BaseTest {
                 "Danh sách tài liệu không còn ở trạng thái 'Chưa có tài liệu nào'"
         );
     }
+
+    @Test
+    public void AT_QLCH_004_DoNotAllowSaveWithoutValidQuestionData() {
+        QuestionManagementPage questionManagementPage = goToCreateQuestionBankPage();
+
+        questionManagementPage.clickSaveBankButton();
+
+        Assert.assertTrue(
+                questionManagementPage.isWarningToastDisplayed("ít nhất 1 câu hỏi"),
+                "Không hiển thị cảnh báo khi lưu trong trạng thái chưa có câu hỏi"
+        );
+    }
 }

@@ -34,7 +34,7 @@ public class QuestionManagementPage {
     private final By addDocumentBtn = By.cssSelector("button[title='Thêm tài liệu']");
     private final By uploadFileInput = By.id("uploadFileInput");
     private final By uploadToast = By.cssSelector("span.global-toast-message");
-    private final By emptyDocumentMessage = By.cssSelector(".qm2-empty");
+//    private final By emptyDocumentMessage = By.cssSelector(".qm2-empty");
 
     public void selectSubjectByVisibleText(String subjectText) {
         WebElement dropdown = wait.until(ExpectedConditions.presenceOfElementLocated(subjectDropdown));
@@ -102,4 +102,35 @@ public class QuestionManagementPage {
     public boolean isEmptyDocumentMessageDisplayed() {
         return wait.until(ExpectedConditions.visibilityOfElementLocated(emptyDocumentMessage)).isDisplayed();
     }
+
+    private final By emptyDocumentMessage = By.cssSelector(".qm2-empty");
+    private final By saveBankButton = By.id("saveBankBtnWrapper");
+//    private final By warningToastMessage = By.cssSelector("span.global-toast-message");
+
+    public void clickSaveBankButton() {
+        ((JavascriptExecutor) driver).executeScript("handleSaveBank();");
+        try {
+            Thread.sleep(1500);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private final By warningToastMessage = By.cssSelector("span.global-toast-message");
+
+    public boolean isWarningToastDisplayed(String expectedMessage) {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        return shortWait.until(driver -> {
+            try {
+                WebElement toast = driver.findElement(warningToastMessage);
+                String actualText = toast.getText().trim();
+                System.out.println("ACTUAL TOAST = [" + actualText + "]");
+                return !actualText.isEmpty() && actualText.contains(expectedMessage);
+            } catch (Exception e) {
+                return false;
+            }
+        });
+    }
+
 }
