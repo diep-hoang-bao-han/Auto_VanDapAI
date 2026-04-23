@@ -37,22 +37,15 @@ public class QuestionManagementPage {
     }
 
     public void clickCreateNewBank() {
-        WebElement button = wait.until(ExpectedConditions.visibilityOfElementLocated(createNewBankBtn));
+        WebElement button = wait.until(ExpectedConditions.presenceOfElementLocated(createNewBankBtn));
 
         ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].scrollIntoView({block:'center'});", button
+                "arguments[0].scrollIntoView({block:'center', inline:'center'});", button
         );
 
-        wait.until(ExpectedConditions.elementToBeClickable(button));
+        wait.until(ExpectedConditions.visibilityOf(button));
 
-        try {
-            button.click();
-        } catch (Exception e) {
-            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", button);
-        }
-
-        wait.until(ExpectedConditions.visibilityOfElementLocated(saveButton));
-         wait.until(ExpectedConditions.visibilityOfElementLocated(addQuestionBtn));
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", button);
     }
 
     public boolean isQuestionBankSectionDisplayed() {

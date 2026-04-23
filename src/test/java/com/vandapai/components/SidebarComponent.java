@@ -21,13 +21,22 @@ public class SidebarComponent {
     public void openQuestionManagement() {
         By questionAndExamMenu = By.xpath("//*[@id='sidebar']/nav/div/button");
         WebElement menu = wait.until(ExpectedConditions.elementToBeClickable(questionAndExamMenu));
-        menu.click();
+
+        try {
+            menu.click();
+        } catch (Exception e) {
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", menu);
+        }
 
         By dropdown = By.id("qna-dropdown");
         wait.until(ExpectedConditions.visibilityOfElementLocated(dropdown));
 
-        By questionManagementLink = By.xpath("//*[@id='qna-dropdown']/a[1]");
-        WebElement link = wait.until(ExpectedConditions.elementToBeClickable(questionManagementLink));
+        By questionManagementLink = By.xpath("//*[@id='qna-dropdown']//a[contains(.,'Quản lý câu hỏi')]");
+        WebElement link = wait.until(ExpectedConditions.visibilityOfElementLocated(questionManagementLink));
+
+        ((JavascriptExecutor) driver).executeScript(
+                "arguments[0].scrollIntoView({block:'center'});", link
+        );
 
         try {
             link.click();
@@ -35,10 +44,7 @@ public class SidebarComponent {
             ((JavascriptExecutor) driver).executeScript("arguments[0].click();", link);
         }
 
-        wait.until(ExpectedConditions.or(
-                ExpectedConditions.urlContains("/lecturer/questions"),
-                ExpectedConditions.visibilityOfElementLocated(By.id("goDetailBtn"))
-        ));
+        wait.until(ExpectedConditions.urlContains("/lecturer/questions"));
     }
     public void openExamManagement() {
         By questionAndExamMenu = By.xpath("//*[@id='sidebar']/nav/div/button");
