@@ -52,7 +52,7 @@ public class QuestionManagementPage {
         }
 
         wait.until(ExpectedConditions.visibilityOfElementLocated(saveButton));
-        wait.until(ExpectedConditions.visibilityOfElementLocated(addQuestionBtn));
+         wait.until(ExpectedConditions.visibilityOfElementLocated(addQuestionBtn));
     }
 
     public boolean isQuestionBankSectionDisplayed() {

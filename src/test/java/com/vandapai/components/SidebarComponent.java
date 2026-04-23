@@ -50,4 +50,3 @@ public class SidebarComponent {
         wait.until(ExpectedConditions.elementToBeClickable(examManagementLink)).click();
     }
 }
-
