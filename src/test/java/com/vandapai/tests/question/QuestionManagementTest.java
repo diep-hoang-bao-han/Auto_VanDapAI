@@ -27,17 +27,25 @@ public class QuestionManagementTest extends BaseTest {
     public void AT_QLCH_001_NavigateToCreateBankSuccessfully() {
         QuestionManagementPage questionManagementPage = goToCreateQuestionBankPage();
 
-        Assert.assertTrue(questionManagementPage.isQuestionBankSectionDisplayed(),
-                "Khu vực Ngân hàng câu hỏi không hiển thị");
+        Assert.assertTrue(
+                questionManagementPage.isQuestionBankSectionDisplayed(),
+                "Khu vực Ngân hàng câu hỏi không hiển thị"
+        );
 
-        Assert.assertTrue(questionManagementPage.isAIConfigSectionDisplayed(),
-                "Khu vực Cấu hình AI không hiển thị");
+        Assert.assertTrue(
+                questionManagementPage.isAIConfigSectionDisplayed(),
+                "Khu vực Cấu hình AI không hiển thị"
+        );
 
-        Assert.assertTrue(questionManagementPage.isSaveButtonDisplayed(),
-                "Nút Lưu thành ngân hàng không hiển thị");
+        Assert.assertTrue(
+                questionManagementPage.isSaveButtonDisplayed(),
+                "Nút Lưu thành ngân hàng không hiển thị"
+        );
 
-        Assert.assertTrue(questionManagementPage.isAddQuestionButtonDisplayed(),
-                "Nút Thêm câu hỏi không hiển thị");
+        Assert.assertTrue(
+                questionManagementPage.isAddQuestionButtonDisplayed(),
+                "Nút Thêm câu hỏi không hiển thị"
+        );
     }
 
     @Test
@@ -106,15 +114,79 @@ public class QuestionManagementTest extends BaseTest {
         questionManagementPage.clickGenerateQuestionButton();
 
         Assert.assertTrue(
-                questionManagementPage.isToastMessageDisplayed("Tạo câu hỏi thành công"),
-                "Không hiển thị thông báo tạo câu hỏi thành công"
+                questionManagementPage.waitUntilCanSaveQuestionBank(),
+                "Sau khi tạo câu hỏi, chưa thấy câu hỏi hoặc nút Lưu thành ngân hàng"
         );
 
         questionManagementPage.clickSaveBankButton();
 
         Assert.assertTrue(
+                questionManagementPage.waitUntilSaveNamePopupAppears(),
+                "Popup đặt tên ngân hàng câu hỏi không hiển thị sau khi bấm Lưu thành ngân hàng"
+        );
+
+        String bankName = "Ngan hang auto test " + System.currentTimeMillis();
+
+        questionManagementPage.enterBankName(bankName);
+        questionManagementPage.clickConfirmSaveBankButton();
+
+        questionManagementPage.waitAfterConfirmSaveBank(bankName);
+
+        SidebarComponent sidebar = new SidebarComponent(driver);
+        sidebar.openQuestionManagement();
+
+        questionManagementPage.selectSubjectByVisibleText("Kho và Khai Phá Dữ Liệu");
+
+        Assert.assertTrue(
+                questionManagementPage.isQuestionBankDisplayedInList(bankName),
+                "Không tìm thấy ngân hàng câu hỏi vừa lưu trong danh sách: " + bankName
+        );
+    }
+    @Test
+    public void AT_QLCH_006_DoNotAllowSaveWhenQuestionListIsEmptyAfterDeletingAllQuestions() {
+        QuestionManagementPage questionManagementPage = goToCreateQuestionBankPage();
+
+        String filePath = "C:\\Users\\DELL\\Downloads\\Test Data\\Data Mining and Data Warehousing.pdf";
+
+        questionManagementPage.clickAddDocumentButton();
+        questionManagementPage.uploadFile(filePath);
+        questionManagementPage.waitForUploadSuccessToast();
+
+        questionManagementPage.closeUploadPopup();
+        questionManagementPage.selectUploadedDocumentCheckbox();
+        questionManagementPage.setQuestionCount("20");
+        questionManagementPage.clickAllLevelChip();
+
+        Assert.assertTrue(
+                questionManagementPage.isGenerateQuestionButtonEnabled(),
+                "Nút Tạo câu hỏi vẫn bị disable sau khi chọn tài liệu, số lượng và mức độ"
+        );
+
+        questionManagementPage.clickGenerateQuestionButton();
+
+        Assert.assertTrue(
                 questionManagementPage.waitForGenerateQuestionSuccessToast(),
                 "Không hiển thị thông báo tạo câu hỏi thành công"
+        );
+
+        Assert.assertTrue(
+                questionManagementPage.waitUntilQuestionsAreGenerated(),
+                "Danh sách câu hỏi chưa được tạo/hiển thị sau khi tạo câu hỏi bằng AI"
+        );
+
+        questionManagementPage.clickBulkDeleteQuestionButton();
+        questionManagementPage.confirmDeleteQuestions();
+
+        Assert.assertTrue(
+                questionManagementPage.waitForDeleteSuccessToast(),
+                "Không hiển thị thông báo xóa thành công"
+        );
+
+        questionManagementPage.clickSaveBankButton();
+
+        Assert.assertTrue(
+                questionManagementPage.isWarningToastDisplayed("ít nhất 1 câu hỏi"),
+                "Không hiển thị cảnh báo khi lưu trong trạng thái danh sách câu hỏi rỗng"
         );
     }
 }
