@@ -48,13 +48,35 @@ public class SidebarComponent {
 
         wait.until(ExpectedConditions.urlContains("/lecturer/questions"));
     }
+
     public void openExamManagement() {
         By questionAndExamMenu = By.xpath("//*[@id='sidebar']/nav/div/button");
-        wait.until(ExpectedConditions.elementToBeClickable(questionAndExamMenu)).click();
+        WebElement menu = wait.until(ExpectedConditions.elementToBeClickable(questionAndExamMenu));
 
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("qna-dropdown")));
+        try {
+            menu.click();
+        } catch (Exception e) {
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", menu);
+        }
 
-        By examManagementLink = By.xpath("//*[@id='qna-dropdown']/a[2]");
-        wait.until(ExpectedConditions.elementToBeClickable(examManagementLink)).click();
+        By dropdown = By.id("qna-dropdown");
+        wait.until(ExpectedConditions.visibilityOfElementLocated(dropdown));
+
+        By examManagementLink = By.xpath("//*[@id='qna-dropdown']//a[contains(.,'Quản lý đề thi')]");
+        WebElement link = wait.until(ExpectedConditions.visibilityOfElementLocated(examManagementLink));
+
+        String href = link.getAttribute("href");
+
+        if (href != null && !href.trim().isEmpty()) {
+            driver.get(href);
+        } else {
+            try {
+                link.click();
+            } catch (Exception e) {
+                ((JavascriptExecutor) driver).executeScript("arguments[0].click();", link);
+            }
+        }
+
+        wait.until(ExpectedConditions.urlContains("/lecturer/exam-codes"));
     }
 }
