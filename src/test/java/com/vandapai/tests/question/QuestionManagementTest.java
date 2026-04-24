@@ -82,4 +82,39 @@ public class QuestionManagementTest extends BaseTest {
                 "Không hiển thị cảnh báo khi lưu trong trạng thái chưa có câu hỏi"
         );
     }
+
+    @Test
+    public void AT_QLCH_005_SaveQuestionBankSuccessfullyAfterHavingValidQuestions() {
+        QuestionManagementPage questionManagementPage = goToCreateQuestionBankPage();
+
+        String filePath = "C:\\Users\\DELL\\Downloads\\Test Data\\Data Mining and Data Warehousing.pdf";
+
+        questionManagementPage.clickAddDocumentButton();
+        questionManagementPage.uploadFile(filePath);
+        questionManagementPage.waitForUploadSuccessToast();
+
+        questionManagementPage.closeUploadPopup();
+        questionManagementPage.selectUploadedDocumentCheckbox();
+        questionManagementPage.setQuestionCount("20");
+        questionManagementPage.clickAllLevelChip();
+
+        Assert.assertTrue(
+                questionManagementPage.isGenerateQuestionButtonEnabled(),
+                "Nút Tạo câu hỏi vẫn bị disable sau khi chọn tài liệu, số lượng và mức độ"
+        );
+
+        questionManagementPage.clickGenerateQuestionButton();
+
+        Assert.assertTrue(
+                questionManagementPage.isToastMessageDisplayed("Tạo câu hỏi thành công"),
+                "Không hiển thị thông báo tạo câu hỏi thành công"
+        );
+
+        questionManagementPage.clickSaveBankButton();
+
+        Assert.assertTrue(
+                questionManagementPage.waitForGenerateQuestionSuccessToast(),
+                "Không hiển thị thông báo tạo câu hỏi thành công"
+        );
+    }
 }
