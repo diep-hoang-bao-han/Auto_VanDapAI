@@ -2,9 +2,12 @@ package com.vandapai.pages.exam;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
@@ -27,8 +30,16 @@ public class ExamManagementPage {
     );
 
     private final By proceedButton = By.id("btnSubmit");
-
     private final By toastMessage = By.cssSelector("span.global-toast-message");
+
+    private final By examSearchInput = By.xpath(
+            "//input[contains(@placeholder,'Tìm kiếm') " +
+                    "or contains(@placeholder,'Tìm') " +
+                    "or contains(@placeholder,'mã bộ đề') " +
+                    "or contains(@placeholder,'Mã bộ đề') " +
+                    "or contains(@id,'search') " +
+                    "or contains(@name,'search')]"
+    );
 
     // =========================
     // LOCATORS - CREATE EXAM FORM
@@ -37,7 +48,6 @@ public class ExamManagementPage {
     private final By subjectDropdown = By.id("subjectId");
     private final By examSetNameInput = By.id("examSetName");
     private final By academicYearInput = By.id("academicYear");
-    private final By semesterHiddenInput = By.id("semester");
     private final By sourceBanksSelect = By.id("sourceBanks");
 
     private final By easyCountInput = By.id("easyCount");
@@ -52,30 +62,32 @@ public class ExamManagementPage {
     private final By allowDuplicateQuestionsCheckbox = By.id("allowDuplicateQuestions");
 
     // =========================
-    // TC001 - NAVIGATE CREATE EXAM
+    // LOCATORS - GLOBAL CONFIRM POPUP
+    // Chỉ bắt popup đang mở thật, tránh bắt nhầm popup ẩn/rỗng.
     // =========================
+
+    private final By globalConfirmBackdrop = By.cssSelector("#globalConfirmBackdrop.open[aria-hidden='false']");
+    private final By globalConfirmAcceptButton = By.cssSelector("#globalConfirmBackdrop.open[aria-hidden='false'] #globalConfirmAccept");
+    private final By globalConfirmCancelButton = By.cssSelector("#globalConfirmBackdrop.open[aria-hidden='false'] #globalConfirmCancel");
+
+    // =========================
+    // COMMON ACTIONS
+    // =========================
+
+    public String generateExamSetName(String prefix) {
+        return prefix + "_" + System.currentTimeMillis();
+    }
 
     public void clickCreateExamButton() {
         WebElement button = wait.until(ExpectedConditions.presenceOfElementLocated(createExamButton));
-
-        ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].scrollIntoView({block:'center', inline:'center'});",
-                button
-        );
-
-        wait.until(ExpectedConditions.visibilityOf(button));
+        scrollToElement(button);
 
         String href = button.getAttribute("href");
 
         if (href != null && !href.trim().isEmpty()) {
             driver.get(href);
         } else {
-            try {
-                wait.until(ExpectedConditions.elementToBeClickable(button));
-                button.click();
-            } catch (Exception e) {
-                ((JavascriptExecutor) driver).executeScript("arguments[0].click();", button);
-            }
+            clickElement(button);
         }
 
         wait.until(ExpectedConditions.urlContains("/lecturer/exam-codes/create"));
@@ -95,8 +107,6 @@ public class ExamManagementPage {
         return wait.until(driver -> {
             String bodyText = driver.findElement(By.tagName("body")).getText();
 
-            System.out.println("CREATE EXAM PAGE BODY = " + bodyText);
-
             boolean hasBasicInfo =
                     bodyText.contains("Môn học")
                             || bodyText.contains("Năm học")
@@ -109,7 +119,6 @@ public class ExamManagementPage {
 
             boolean hasMatrixSection =
                     bodyText.contains("Ma trận")
-                            || bodyText.contains("Ma trận Đề thi")
                             || bodyText.contains("Dễ")
                             || bodyText.contains("Trung bình")
                             || bodyText.contains("Khó");
@@ -123,59 +132,136 @@ public class ExamManagementPage {
         });
     }
 
-    // =========================
-    // TC002 - EMPTY EXAM SET NAME
-    // =========================
-
     public void selectSubjectByValue(String subjectValue) {
         WebElement dropdown = wait.until(ExpectedConditions.presenceOfElementLocated(subjectDropdown));
+        scrollToElement(dropdown);
 
-        ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].value = arguments[1];" +
-                        "arguments[0].dispatchEvent(new Event('change', { bubbles: true }));",
-                dropdown,
-                subjectValue
-        );
+        try {
+            Select select = new Select(dropdown);
+            select.selectByValue(subjectValue);
+        } catch (Exception e) {
+            ((JavascriptExecutor) driver).executeScript(
+                    "arguments[0].value = arguments[1];" +
+                            "arguments[0].dispatchEvent(new Event('change', { bubbles: true }));",
+                    dropdown,
+                    subjectValue
+            );
+        }
 
         wait.until(driver -> driver.getCurrentUrl().contains("subject_id=" + subjectValue));
+
+        // Chờ form sau khi chọn môn học render lại xong
+        wait.until(ExpectedConditions.elementToBeClickable(examSetNameInput));
+
+        sleep(1000);
     }
 
     public void leaveExamSetNameEmpty() {
         WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(examSetNameInput));
+        scrollToElement(input);
 
-        input.clear();
+        input.click();
+        input.sendKeys(Keys.CONTROL, "a");
+        input.sendKeys(Keys.BACK_SPACE);
+        input.sendKeys(Keys.TAB);
 
-        ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].value = '';" +
-                        "arguments[0].dispatchEvent(new Event('input', { bubbles: true }));" +
-                        "arguments[0].dispatchEvent(new Event('change', { bubbles: true }));" +
-                        "arguments[0].dispatchEvent(new Event('blur', { bubbles: true }));",
-                input
-        );
+        sleep(500);
+    }
+
+    public void enterExamSetName(String examSetName) {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+        WebElement input = shortWait.until(ExpectedConditions.presenceOfElementLocated(examSetNameInput));
+
+        scrollToElement(input);
+
+        try {
+            input.click();
+            input.sendKeys(Keys.CONTROL, "a");
+            input.sendKeys(Keys.BACK_SPACE);
+            input.sendKeys(examSetName);
+            input.sendKeys(Keys.TAB);
+        } catch (Exception e) {
+            System.out.println("SENDKEYS MÃ BỘ ĐỀ KHÔNG ĐƯỢC -> SET BẰNG JS");
+        }
+
+        sleep(500);
+
+        String actualValue = driver.findElement(examSetNameInput).getAttribute("value");
+
+        if (actualValue == null || !actualValue.trim().equals(examSetName)) {
+            System.out.println("MÃ BỘ ĐỀ CHƯA NHẬP ĐÚNG -> SET LẠI BẰNG JS");
+
+            ((JavascriptExecutor) driver).executeScript(
+                    "const input = document.getElementById('examSetName');" +
+                            "input.focus();" +
+                            "input.value = arguments[0];" +
+                            "input.dispatchEvent(new Event('input', { bubbles: true }));" +
+                            "input.dispatchEvent(new Event('change', { bubbles: true }));" +
+                            "input.dispatchEvent(new Event('blur', { bubbles: true }));",
+                    examSetName
+            );
+
+            sleep(500);
+        }
+
+        actualValue = driver.findElement(examSetNameInput).getAttribute("value");
+
+        System.out.println("EXAM SET NAME | EXPECTED = " + examSetName + " | ACTUAL = " + actualValue);
+
+        if (actualValue == null || !actualValue.trim().equals(examSetName)) {
+            throw new RuntimeException(
+                    "Không nhập được Mã bộ đề. Expected = " + examSetName + ", Actual = " + actualValue
+            );
+        }
     }
 
     public void enterAcademicYear(String academicYear) {
-        WebElement input = wait.until(ExpectedConditions.presenceOfElementLocated(academicYearInput));
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
-        ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].scrollIntoView({block:'center', inline:'center'});",
-                input
-        );
+        WebElement input = shortWait.until(ExpectedConditions.presenceOfElementLocated(academicYearInput));
 
-        input.click();
-        input.clear();
-        input.sendKeys(academicYear);
+        scrollToElement(input);
 
-        ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].value = arguments[1];" +
-                        "arguments[0].dispatchEvent(new Event('input', { bubbles: true }));" +
-                        "arguments[0].dispatchEvent(new Event('change', { bubbles: true }));" +
-                        "arguments[0].dispatchEvent(new Event('blur', { bubbles: true }));",
-                input,
-                academicYear
-        );
+        try {
+            input.click();
+            input.sendKeys(Keys.CONTROL, "a");
+            input.sendKeys(Keys.BACK_SPACE);
+            input.sendKeys(academicYear);
+            input.sendKeys(Keys.TAB);
+        } catch (Exception e) {
+            System.out.println("SENDKEYS NĂM HỌC KHÔNG ĐƯỢC -> SET BẰNG JS");
+        }
 
-        wait.until(driver -> academicYear.equals(input.getAttribute("value")));
+        sleep(500);
+
+        String actualValue = driver.findElement(academicYearInput).getAttribute("value");
+
+        if (actualValue == null || !actualValue.trim().equals(academicYear)) {
+            System.out.println("NĂM HỌC CHƯA NHẬP ĐÚNG -> SET LẠI BẰNG JS");
+
+            ((JavascriptExecutor) driver).executeScript(
+                    "const input = document.getElementById('academicYear');" +
+                            "input.focus();" +
+                            "input.value = arguments[0];" +
+                            "input.dispatchEvent(new Event('input', { bubbles: true }));" +
+                            "input.dispatchEvent(new Event('change', { bubbles: true }));" +
+                            "input.dispatchEvent(new Event('blur', { bubbles: true }));",
+                    academicYear
+            );
+
+            sleep(500);
+        }
+
+        actualValue = driver.findElement(academicYearInput).getAttribute("value");
+
+        System.out.println("ACADEMIC YEAR | EXPECTED = " + academicYear + " | ACTUAL = " + actualValue);
+
+        if (actualValue == null || !actualValue.trim().equals(academicYear)) {
+            throw new RuntimeException(
+                    "Không nhập được Năm học. Expected = " + academicYear + ", Actual = " + actualValue
+            );
+        }
     }
 
     public void selectSemesterHK1() {
@@ -183,20 +269,17 @@ public class ExamManagementPage {
                 By.xpath("//button[@data-value='HK1']")
         ));
 
-        try {
-            hk1Button.click();
-        } catch (Exception e) {
-            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", hk1Button);
-        }
+        scrollToElement(hk1Button);
+        clickElement(hk1Button);
 
-        ((JavascriptExecutor) driver).executeScript(
-                "document.getElementById('semester').value='HK1';" +
-                        "document.getElementById('semester').dispatchEvent(new Event('change', { bubbles: true }));"
-        );
+        wait.until(driver -> "HK1".equals(
+                ((JavascriptExecutor) driver).executeScript("return document.getElementById('semester').value;")
+        ));
     }
 
     public void selectFirstAvailableQuestionBankSource() {
         WebElement sourceSelect = wait.until(ExpectedConditions.presenceOfElementLocated(sourceBanksSelect));
+        scrollToElement(sourceSelect);
 
         Boolean hasOption = (Boolean) ((JavascriptExecutor) driver).executeScript(
                 "const select = arguments[0];" +
@@ -204,178 +287,704 @@ public class ExamManagementPage {
                 sourceSelect
         );
 
-        if (!hasOption) {
+        if (!Boolean.TRUE.equals(hasOption)) {
             throw new RuntimeException("Không có nguồn câu hỏi nào để chọn trong sourceBanks");
         }
 
-        ((JavascriptExecutor) driver).executeScript(
-                "const select = arguments[0];" +
-                        "const firstValue = select.options[0].value;" +
-                        "select.value = firstValue;" +
-                        "for (let option of select.options) {" +
-                        "   option.selected = option.value === firstValue;" +
-                        "}" +
-                        "select.dispatchEvent(new Event('change', { bubbles: true }));" +
-                        "if (window.jQuery) { jQuery(select).trigger('change'); }",
-                sourceSelect
-        );
-    }
-
-    public void configValidExamMatrix() {
-        setInputValueIfExists(easyCountInput, "1");
-        setInputValueIfExists(mediumCountInput, "1");
-        setInputValueIfExists(hardCountInput, "1");
-
-        setInputValueIfExists(easyScoreInput, "2");
-        setInputValueIfExists(mediumScoreInput, "3");
-        setInputValueIfExists(hardScoreInput, "5");
-    }
-
-    public void enterNumberOfExamCodes(String number) {
-        WebElement input = wait.until(ExpectedConditions.presenceOfElementLocated(numberOfExamCodesInput));
-
-        ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].scrollIntoView({block:'center', inline:'center'});",
-                input
-        );
-
-        input.click();
-        input.clear();
-        input.sendKeys(number);
-
-        ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].value = arguments[1];" +
-                        "arguments[0].dispatchEvent(new Event('input', { bubbles: true }));" +
-                        "arguments[0].dispatchEvent(new Event('change', { bubbles: true }));" +
-                        "arguments[0].dispatchEvent(new Event('blur', { bubbles: true }));",
-                input,
-                number
-        );
-
-        wait.until(driver -> number.equals(driver.findElement(numberOfExamCodesInput).getAttribute("value")));
-    }
-
-    public void tickAllowDuplicateQuestionsCheckbox() {
-        WebElement checkbox = wait.until(ExpectedConditions.presenceOfElementLocated(allowDuplicateQuestionsCheckbox));
-
-        ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].scrollIntoView({block:'center', inline:'center'});",
-                checkbox
-        );
-
-        boolean checkedBefore = Boolean.TRUE.equals(((JavascriptExecutor) driver).executeScript(
-                "return document.getElementById('allowDuplicateQuestions').checked;"
-        ));
-
-        if (!checkedBefore) {
+        try {
+            Select select = new Select(sourceSelect);
+            select.selectByIndex(0);
+        } catch (Exception e) {
+            // Fallback cho select nguồn nếu bị custom/ẩn.
             ((JavascriptExecutor) driver).executeScript(
-                    "document.getElementById('allowDuplicateQuestions').click();"
+                    "const select = arguments[0];" +
+                            "const firstValue = select.options[0].value;" +
+                            "select.value = firstValue;" +
+                            "for (let option of select.options) {" +
+                            "   option.selected = option.value === firstValue;" +
+                            "}" +
+                            "select.dispatchEvent(new Event('change', { bubbles: true }));" +
+                            "if (window.jQuery) { jQuery(select).trigger('change'); }",
+                    sourceSelect
             );
         }
 
-        Object checkedAfter = ((JavascriptExecutor) driver).executeScript(
+        sleep(1000);
+    }
+
+    public void configValidExamMatrix() {
+        configExamMatrix("1", "1", "1", "2", "3", "5");
+    }
+
+    public void configExamMatrix(String easyCount, String mediumCount, String hardCount,
+                                 String easyScore, String mediumScore, String hardScore) {
+        setNumberByPlusMinusButtons(easyCountInput, easyCount);
+        setNumberByPlusMinusButtons(mediumCountInput, mediumCount);
+        setNumberByPlusMinusButtons(hardCountInput, hardCount);
+
+        setNumberByPlusMinusButtons(easyScoreInput, easyScore);
+        setNumberByPlusMinusButtons(mediumScoreInput, mediumScore);
+        setNumberByPlusMinusButtons(hardScoreInput, hardScore);
+
+        sleep(1000);
+    }
+
+    public void enterNumberOfExamCodes(String number) {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+        WebElement input = shortWait.until(ExpectedConditions.presenceOfElementLocated(numberOfExamCodesInput));
+        scrollToElement(input);
+
+        try {
+            input.click();
+            input.sendKeys(Keys.CONTROL, "a");
+            input.sendKeys(Keys.BACK_SPACE);
+            input.sendKeys(number);
+            input.sendKeys(Keys.TAB);
+        } catch (Exception e) {
+            System.out.println("SENDKEYS SỐ LƯỢNG MÃ ĐỀ KHÔNG ĐƯỢC -> SET BẰNG JS");
+        }
+
+        sleep(500);
+
+        String actualValue = driver.findElement(numberOfExamCodesInput).getAttribute("value");
+
+        if (actualValue == null || !actualValue.trim().equals(number)) {
+            System.out.println("SỐ LƯỢNG MÃ ĐỀ CHƯA NHẬP ĐÚNG -> SET LẠI BẰNG JS");
+
+            ((JavascriptExecutor) driver).executeScript(
+                    "const input = document.getElementById('numberOfVersions');" +
+                            "input.focus();" +
+                            "input.value = arguments[0];" +
+                            "input.dispatchEvent(new Event('input', { bubbles: true }));" +
+                            "input.dispatchEvent(new Event('change', { bubbles: true }));" +
+                            "input.dispatchEvent(new Event('blur', { bubbles: true }));",
+                    number
+            );
+
+            sleep(500);
+        }
+
+        actualValue = driver.findElement(numberOfExamCodesInput).getAttribute("value");
+
+        System.out.println("NUMBER OF EXAM CODES | EXPECTED = " + number + " | ACTUAL = " + actualValue);
+
+        if (actualValue == null || !actualValue.trim().equals(number)) {
+            throw new RuntimeException(
+                    "Không nhập được Số lượng mã đề. Expected = " + number + ", Actual = " + actualValue
+            );
+        }
+    }
+
+    public void refreshCreateExamPage() {
+        driver.navigate().refresh();
+
+        wait.until(ExpectedConditions.urlContains("/lecturer/exam-codes/create"));
+
+        wait.until(ExpectedConditions.presenceOfElementLocated(examSetNameInput));
+        wait.until(ExpectedConditions.presenceOfElementLocated(academicYearInput));
+        wait.until(ExpectedConditions.presenceOfElementLocated(numberOfExamCodesInput));
+
+        sleep(1000);
+    }
+    public void tickAllowDuplicateQuestionsCheckbox() {
+        wait.until(ExpectedConditions.presenceOfElementLocated(allowDuplicateQuestionsCheckbox));
+
+        ((JavascriptExecutor) driver).executeScript(
+                "const cb = document.getElementById('allowDuplicateQuestions');" +
+                        "if (!cb) throw new Error('Không tìm thấy checkbox allowDuplicateQuestions');" +
+                        "cb.scrollIntoView({block:'center'});" +
+                        "cb.checked = true;" +
+                        "cb.setAttribute('checked', 'checked');" +
+                        "cb.dispatchEvent(new Event('input', { bubbles: true }));" +
+                        "cb.dispatchEvent(new Event('change', { bubbles: true }));"
+        );
+
+        sleep(500);
+
+        Boolean checkedAfter = (Boolean) ((JavascriptExecutor) driver).executeScript(
                 "return document.getElementById('allowDuplicateQuestions').checked;"
         );
 
-        System.out.println("ALLOW DUPLICATE CHECKED AFTER CLICK = " + checkedAfter);
+        System.out.println("ALLOW DUPLICATE QUESTIONS CHECKED = " + checkedAfter);
+
+        if (!Boolean.TRUE.equals(checkedAfter)) {
+            throw new RuntimeException("Không tick được checkbox Cho phép câu hỏi trùng lặp giữa các mã đề");
+        }
     }
 
     public void clickProceedButton() {
         WebElement button = wait.until(ExpectedConditions.presenceOfElementLocated(proceedButton));
+        scrollToElement(button);
 
         ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].scrollIntoView({block:'center', inline:'center'});",
-                button
+                "const btn = document.getElementById('btnSubmit');" +
+                        "if (!btn) throw new Error('Không tìm thấy nút Tiến hành tạo đề thi');" +
+                        "btn.scrollIntoView({block:'center'});" +
+                        "btn.dispatchEvent(new MouseEvent('mousedown', {bubbles:true, cancelable:true, view:window}));" +
+                        "btn.dispatchEvent(new MouseEvent('mouseup', {bubbles:true, cancelable:true, view:window}));" +
+                        "btn.dispatchEvent(new MouseEvent('click', {bubbles:true, cancelable:true, view:window}));"
         );
 
-        try {
-            wait.until(ExpectedConditions.elementToBeClickable(button));
-            button.click();
-        } catch (Exception e) {
-            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", button);
-        }
+        sleep(1500);
+    }
 
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+    public void printCreateExamFormDebug() {
+        Object debug = ((JavascriptExecutor) driver).executeScript(
+                "const ids=['examSetName','academicYear','semester','sourceBanks','easyCount','mediumCount','hardCount','easyScore','mediumScore','hardScore','numberOfVersions','allowDuplicateQuestions','btnSubmit'];" +
+                        "let o={}; ids.forEach(id=>{" +
+                        "let e=document.getElementById(id);" +
+                        "o[id]=e ? (e.type==='checkbox' ? e.checked : (id==='btnSubmit' ? {disabled:e.disabled,text:e.innerText,cls:e.className} : e.value)) : 'NOT_FOUND';" +
+                        "}); return o;"
+        );
+        System.out.println("FORM DEBUG = " + debug);
+    }
 
-        boolean hasToast = (Boolean) ((JavascriptExecutor) driver).executeScript(
-                "return document.body.innerText.includes('Vui lòng nhập mã bộ đề');"
+    public void clickAcceptConfirmPopup() {
+        wait.until(ExpectedConditions.presenceOfElementLocated(By.id("globalConfirmAccept")));
+
+        ((JavascriptExecutor) driver).executeScript(
+                "const btn = document.getElementById('globalConfirmAccept');" +
+                        "if (!btn) throw new Error('Không tìm thấy nút Xác nhận');" +
+                        "btn.click();" +
+                        "setTimeout(() => btn.click(), 300);" +
+                        "setTimeout(() => btn.click(), 700);" +
+                        "setTimeout(() => btn.dispatchEvent(new MouseEvent('click', {bubbles:true, cancelable:true, view:window})), 1000);"
         );
 
-        if (!hasToast) {
-            System.out.println("NORMAL CLICK BTN SUBMIT HAS NO TOAST -> CALL submitCreateExamSet() DIRECTLY");
-
-            ((JavascriptExecutor) driver).executeScript(
-                    "if (typeof submitCreateExamSet === 'function') { submitCreateExamSet(); }"
-            );
-        }
+        sleep(5000);
     }
 
-    private void setInputValueIfExists(By locator, String value) {
+    public void clickCancelConfirmPopup() {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(15));
+
+        shortWait.until(ExpectedConditions.visibilityOfElementLocated(globalConfirmBackdrop));
+
+        WebElement cancelButton = shortWait.until(
+                ExpectedConditions.elementToBeClickable(globalConfirmCancelButton)
+        );
+
+        scrollToElement(cancelButton);
+        clickElement(cancelButton);
+
+        shortWait.until(driver -> {
+            try {
+                Object isOpen = ((JavascriptExecutor) driver).executeScript(
+                        "const popup = document.querySelector('#globalConfirmBackdrop');" +
+                                "return popup && popup.classList.contains('open') && popup.getAttribute('aria-hidden') === 'false';"
+                );
+
+                return !Boolean.TRUE.equals(isOpen);
+            } catch (Exception e) {
+                return true;
+            }
+        });
+
+        sleep(800);
+    }
+
+    public void openExamSetListPage() {
+        String currentUrl = driver.getCurrentUrl();
+        String baseUrl = currentUrl.substring(0, currentUrl.indexOf("/lecturer/"));
+
+        driver.get(baseUrl + "/lecturer/exam-codes/");
+
+        wait.until(driver -> {
+            String bodyText = driver.findElement(By.tagName("body")).getText();
+
+            return bodyText.contains("Quản lý đề thi")
+                    || bodyText.contains("Danh sách bộ đề")
+                    || bodyText.contains("Tạo đề thi");
+        });
+
+        sleep(1000);
+    }
+    public void openFirstExamSetCard() {
+        openExamSetListPage();
+
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+        WebElement firstCard = shortWait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath(
+                        "(//a[contains(@href,'/lecturer/exam-codes/') and not(contains(@href,'create'))]" +
+                                " | //div[contains(@class,'card') and .//text()[contains(.,'Mã đề') or contains(.,'Bộ đề')]]" +
+                                " | //tr[.//td])[1]"
+                )
+        ));
+
+        scrollToElement(firstCard);
+
         try {
-            WebElement input = wait.until(ExpectedConditions.presenceOfElementLocated(locator));
-
-            ((JavascriptExecutor) driver).executeScript(
-                    "arguments[0].value = arguments[1];" +
-                            "arguments[0].dispatchEvent(new Event('input', { bubbles: true }));" +
-                            "arguments[0].dispatchEvent(new Event('change', { bubbles: true }));" +
-                            "arguments[0].dispatchEvent(new Event('blur', { bubbles: true }));",
-                    input,
-                    value
-            );
+            firstCard.click();
         } catch (Exception e) {
-            System.out.println("Không tìm thấy input để set value: " + locator);
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", firstCard);
         }
+
+        sleep(1500);
     }
+    public boolean isExamSetDetailPageDisplayed() {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+        return shortWait.until(driver -> {
+            String currentUrl = driver.getCurrentUrl();
+            String bodyText = driver.findElement(By.tagName("body")).getText();
+
+            System.out.println("DETAIL PAGE URL = " + currentUrl);
+            System.out.println("DETAIL PAGE TEXT = " + bodyText);
+
+            boolean isDetailUrl =
+                    currentUrl.contains("/lecturer/exam-codes/")
+                            && !currentUrl.contains("/create");
+
+            boolean hasDetailContent =
+                    bodyText.contains("Mã đề")
+                            || bodyText.contains("Danh sách mã đề")
+                            || bodyText.contains("Câu hỏi")
+                            || bodyText.contains("Chi tiết")
+                            || bodyText.contains("Tổng điểm")
+                            || bodyText.contains("Trạng thái");
+
+            return isDetailUrl && hasDetailContent;
+        });
+    }
+    public void searchExamSet(String keyword) {
+        WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(examSearchInput));
+        scrollToElement(input);
+
+        input.click();
+        input.sendKeys(Keys.CONTROL, "a");
+        input.sendKeys(Keys.BACK_SPACE);
+        input.sendKeys(keyword);
+        input.sendKeys(Keys.ENTER);
+
+        sleep(1500);
+    }
+
+    public void openExamSetDetailByName(String examSetName) {
+        WebElement examSetElement = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//*[contains(normalize-space(.),'" + examSetName + "')]")
+        ));
+
+        scrollToElement(examSetElement);
+        clickElement(examSetElement);
+
+        sleep(1500);
+    }
+
+    // =========================
+    // ASSERTIONS - VALIDATION
+    // =========================
 
     public boolean isExamSetNameRequiredMessageDisplayed() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
         return shortWait.until(driver -> {
-            try {
-                String bodyText = driver.findElement(By.tagName("body")).getText();
+            String pageText = getPageAndToastText();
 
-                String toastText = "";
+            return pageText.contains("Vui lòng nhập mã bộ đề")
+                    || pageText.contains("nhập mã bộ đề");
+        });
+    }
 
-                try {
-                    toastText = driver.findElement(toastMessage).getText().trim();
-                } catch (Exception ignored) {
-                }
+    public boolean isAcademicYearInvalidMessageDisplayed() {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
-                String allToastText = "";
+        return shortWait.until(driver -> {
+            String pageText = getPageAndToastText();
 
-                try {
-                    Object textObj = ((JavascriptExecutor) driver).executeScript(
-                            "let items = document.querySelectorAll('.global-toast-message');" +
-                                    "return Array.from(items).map(e => e.innerText.trim()).join(' | ');"
+            return pageText.contains("Năm học phải đúng định dạng")
+                    || pageText.contains("xxxx-xxxx")
+                    || pageText.contains("chỉ được chứa chữ số")
+                    || (
+                    pageText.contains("Năm học")
+                            && pageText.contains("định dạng")
+                            && pageText.contains("chữ số")
+            );
+        });
+    }
+
+    public boolean isQuestionBankSourceDisplayed() {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(15));
+
+        return shortWait.until(driver -> {
+            String bodyText = driver.findElement(By.tagName("body")).getText();
+
+            return bodyText.contains("Ngân hàng câu hỏi")
+                    || bodyText.contains("Nguồn câu hỏi")
+                    || bodyText.contains("DS002")
+                    || bodyText.contains("52 câu")
+                    || bodyText.contains("NHCH")
+                    || bodyText.contains("DS401");
+        });
+    }
+
+    public boolean isTotalQuestionAndScoreUpdated(String expectedTotalQuestions, String expectedTotalScore) {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(15));
+
+        return shortWait.until(driver -> {
+            String bodyText = driver.findElement(By.tagName("body")).getText();
+
+            boolean hasTotalQuestion =
+                    bodyText.contains("Tổng câu")
+                            && bodyText.contains(expectedTotalQuestions);
+
+            boolean hasTotalScore =
+                    bodyText.contains("Tổng điểm")
+                            && (
+                            bodyText.contains(expectedTotalScore)
+                                    || bodyText.contains(expectedTotalScore + ".00")
                     );
 
-                    allToastText = textObj == null ? "" : textObj.toString();
-                } catch (Exception ignored) {
-                }
+            System.out.println("TOTAL TEXT = " + bodyText);
 
-                System.out.println("TOAST TEXT = [" + toastText + "]");
-                System.out.println("ALL TOAST TEXT = [" + allToastText + "]");
-                System.out.println("BODY HAS ERROR = " + bodyText.contains("Vui lòng nhập mã bộ đề"));
+            return hasTotalQuestion && hasTotalScore;
+        });
+    }
 
-                return toastText.contains("Vui lòng nhập mã bộ đề")
-                        || allToastText.contains("Vui lòng nhập mã bộ đề")
-                        || bodyText.contains("Vui lòng nhập mã bộ đề")
-                        || toastText.contains("nhập mã bộ đề")
-                        || allToastText.contains("nhập mã bộ đề")
-                        || bodyText.contains("nhập mã bộ đề");
+    // =========================
+    // ASSERTIONS - CONFIRM POPUP
+    // =========================
+
+    public boolean isCreateExamConfirmPopupDisplayed() {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(15));
+
+        return shortWait.until(driver -> {
+            try {
+                WebElement backdrop = driver.findElement(globalConfirmBackdrop);
+                WebElement acceptButton = driver.findElement(globalConfirmAcceptButton);
+                WebElement cancelButton = driver.findElement(globalConfirmCancelButton);
+
+                String popupText = getOpenConfirmPopupText();
+
+                System.out.println("CONFIRM POPUP TEXT = " + popupText);
+
+                return backdrop.isDisplayed()
+                        && popupText.contains("Xác nhận tạo bộ đề")
+                        && popupText.contains("Bạn có chắc chắn muốn tiếp tục tạo bộ đề không")
+                        && acceptButton.isDisplayed()
+                        && cancelButton.isDisplayed();
             } catch (Exception e) {
                 return false;
             }
         });
     }
 
-    public void waitForUserToSeeToast() {
+    public boolean isTotalScoreGreaterThan10ConfirmPopupDisplayed() {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(15));
+
+        return shortWait.until(driver -> {
+            try {
+                WebElement backdrop = driver.findElement(globalConfirmBackdrop);
+                String popupText = getOpenConfirmPopupText();
+
+                System.out.println("CONFIRM POPUP TEXT = " + popupText);
+
+                return backdrop.isDisplayed()
+                        && popupText.contains("Xác nhận tạo bộ đề")
+                        && (
+                        popupText.contains("lớn hơn 10")
+                                || popupText.contains("vượt quá 10")
+                                || popupText.contains("quá 10")
+                                || popupText.contains("hơn 10")
+                );
+            } catch (Exception e) {
+                return false;
+            }
+        });
+    }
+
+    public boolean isTotalScoreLessThan10ConfirmPopupDisplayed() {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(15));
+
+        return shortWait.until(driver -> {
+            try {
+                WebElement backdrop = driver.findElement(globalConfirmBackdrop);
+                String popupText = getOpenConfirmPopupText();
+
+                System.out.println("CONFIRM POPUP TEXT = " + popupText);
+
+                return backdrop.isDisplayed()
+                        && popupText.contains("Xác nhận tạo bộ đề")
+                        && (
+                        popupText.contains("chưa đủ 10 điểm")
+                                || popupText.contains("nhỏ hơn 10")
+                                || popupText.contains("chưa đủ")
+                                || popupText.contains("dưới 10")
+                );
+            } catch (Exception e) {
+                return false;
+            }
+        });
+    }
+
+    // =========================
+    // ASSERTIONS - CREATE / SEARCH / DETAIL
+    // =========================
+
+    public boolean isCreateExamSuccessfullyDisplayed() {
+        WebDriverWait longWait = new WebDriverWait(driver, Duration.ofSeconds(60));
+
+        return longWait.until(driver -> {
+            String currentUrl = driver.getCurrentUrl();
+            String pageText = getPageAndToastText();
+
+            System.out.println("CREATE SUCCESS URL = " + currentUrl);
+            System.out.println("CREATE SUCCESS TEXT = " + pageText);
+
+            boolean popupGone =
+                    !pageText.contains("Xác nhận tạo bộ đề")
+                            && !pageText.contains("Bạn có chắc chắn muốn tiếp tục tạo bộ đề không?");
+
+            boolean hasSuccessMessage =
+                    pageText.contains("Tạo bộ đề thành công")
+                            || pageText.contains("Tạo đề thành công")
+                            || pageText.contains("Sinh đề thành công")
+                            || pageText.contains("tạo thành công");
+
+            boolean leftCreatePage =
+                    currentUrl.contains("/lecturer/exam-codes/")
+                            && !currentUrl.contains("/create");
+
+            return popupGone && (hasSuccessMessage || leftCreatePage);
+        });
+    }
+
+    public boolean isExamSetDisplayedInList(String keyword) {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+        return shortWait.until(driver -> {
+            String bodyText = driver.findElement(By.tagName("body")).getText();
+
+            System.out.println("EXAM SET LIST TEXT = " + bodyText);
+
+            return bodyText.contains(keyword);
+        });
+    }
+
+    public boolean isExamSetDetailDisplayed(String examSetName) {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+        return shortWait.until(driver -> {
+            String currentUrl = driver.getCurrentUrl();
+            String bodyText = driver.findElement(By.tagName("body")).getText();
+
+            System.out.println("DETAIL URL = " + currentUrl);
+            System.out.println("DETAIL TEXT = " + bodyText);
+
+            boolean hasExamSetName = bodyText.contains(examSetName);
+
+            boolean hasDetailInfo =
+                    bodyText.contains("Mã đề")
+                            || bodyText.contains("Danh sách mã đề")
+                            || bodyText.contains("Câu hỏi")
+                            || bodyText.contains("Chi tiết");
+
+            return hasExamSetName && hasDetailInfo;
+        });
+    }
+
+    // =========================
+    // HELPER - MATRIX
+    // =========================
+
+    private void setNumberByPlusMinusButtons(By inputLocator, String expectedValue) {
+        WebElement input = wait.until(ExpectedConditions.presenceOfElementLocated(inputLocator));
+        scrollToElement(input);
+
+        String inputId = input.getAttribute("id");
+        int targetValue = Integer.parseInt(expectedValue);
+        int currentValue = getIntegerValue(inputLocator);
+
+        System.out.println("SET NUMBER | INPUT = " + inputId
+                + " | CURRENT = " + currentValue
+                + " | TARGET = " + targetValue);
+
+        int safety = 0;
+
+        while (currentValue < targetValue && safety < 20) {
+            try {
+                WebElement plusButton = driver.findElement(getPlusButtonByInputId(inputId));
+                clickMatrixButton(plusButton);
+                sleep(300);
+            } catch (Exception e) {
+                System.out.println("KHÔNG CLICK ĐƯỢC NÚT + CỦA " + inputId);
+                break;
+            }
+
+            int newValue = getIntegerValue(inputLocator);
+
+            if (newValue == currentValue) {
+                System.out.println("CLICK + KHÔNG LÀM ĐỔI GIÁ TRỊ " + inputId);
+                break;
+            }
+
+            currentValue = newValue;
+            safety++;
+        }
+
+        while (currentValue > targetValue && safety < 40) {
+            try {
+                WebElement minusButton = driver.findElement(getMinusButtonByInputId(inputId));
+                clickMatrixButton(minusButton);
+                sleep(300);
+            } catch (Exception e) {
+                System.out.println("KHÔNG CLICK ĐƯỢC NÚT - CỦA " + inputId);
+                break;
+            }
+
+            int newValue = getIntegerValue(inputLocator);
+
+            if (newValue == currentValue) {
+                System.out.println("CLICK - KHÔNG LÀM ĐỔI GIÁ TRỊ " + inputId);
+                break;
+            }
+
+            currentValue = newValue;
+            safety++;
+        }
+
+        int finalValue = getIntegerValue(inputLocator);
+
+        if (finalValue != targetValue) {
+            System.out.println("NÚT +/- KHÔNG SET ĐƯỢC " + inputId + " -> SET TRỰC TIẾP VÀO INPUT");
+
+            ((JavascriptExecutor) driver).executeScript(
+                    "const input = document.getElementById(arguments[0]);" +
+                            "input.focus();" +
+                            "input.value = arguments[1];" +
+                            "input.dispatchEvent(new Event('input', { bubbles: true }));" +
+                            "input.dispatchEvent(new Event('change', { bubbles: true }));" +
+                            "input.dispatchEvent(new Event('blur', { bubbles: true }));",
+                    inputId,
+                    expectedValue
+            );
+
+            sleep(500);
+        }
+
+        finalValue = getIntegerValue(inputLocator);
+
+        System.out.println("AFTER SET NUMBER | INPUT = " + inputId
+                + " | EXPECTED = " + targetValue
+                + " | ACTUAL = " + finalValue);
+
+        if (finalValue != targetValue) {
+            throw new RuntimeException("Không set được giá trị cho input "
+                    + inputId + ". Expected = " + targetValue + ", Actual = " + finalValue);
+        }
+    }
+
+    private int getIntegerValue(By inputLocator) {
+        WebElement input = wait.until(ExpectedConditions.presenceOfElementLocated(inputLocator));
+        String rawValue = input.getAttribute("value");
+
+        if (rawValue == null || rawValue.trim().isEmpty()) {
+            return 0;
+        }
+
+        rawValue = rawValue.trim();
+
+        if (rawValue.contains(".")) {
+            rawValue = rawValue.substring(0, rawValue.indexOf("."));
+        }
+
+        return Integer.parseInt(rawValue);
+    }
+
+    private By getPlusButtonByInputId(String inputId) {
+        return By.xpath("//*[@id='" + inputId + "']/ancestor::*[contains(@class,'matrix') or contains(@class,'row') or contains(@class,'item') or contains(@class,'control')][1]//button[normalize-space()='+']");
+    }
+
+    private By getMinusButtonByInputId(String inputId) {
+        return By.xpath("//*[@id='" + inputId + "']/ancestor::*[contains(@class,'matrix') or contains(@class,'row') or contains(@class,'item') or contains(@class,'control')][1]//button[normalize-space()='-']");
+    }
+    private void clickMatrixButton(WebElement button) {
+        scrollToElement(button);
+
         try {
-            Thread.sleep(2000);
+            button.click();
+        } catch (Exception e1) {
+            try {
+                new Actions(driver).moveToElement(button).click().perform();
+            } catch (Exception e2) {
+                ((JavascriptExecutor) driver).executeScript("arguments[0].click();", button);
+            }
+        }
+    }
+
+    // =========================
+    // HELPER - COMMON
+    // =========================
+
+    private void typeText(WebElement input, String value) {
+        scrollToElement(input);
+
+        input.click();
+        input.sendKeys(Keys.CONTROL, "a");
+        input.sendKeys(Keys.BACK_SPACE);
+        input.sendKeys(value);
+        input.sendKeys(Keys.TAB);
+
+        sleep(300);
+    }
+
+    private void clickElement(WebElement element) {
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(element));
+            element.click();
+        } catch (Exception e) {
+            new Actions(driver).moveToElement(element).click().perform();
+        }
+    }
+
+    private void scrollToElement(WebElement element) {
+        ((JavascriptExecutor) driver).executeScript(
+                "arguments[0].scrollIntoView({block:'center', inline:'center'});",
+                element
+        );
+    }
+
+    private String getOpenConfirmPopupText() {
+        Object textObj = ((JavascriptExecutor) driver).executeScript(
+                "const popup = document.querySelector('#globalConfirmBackdrop.open[aria-hidden=\"false\"]');" +
+                        "return popup ? popup.innerText : '';"
+        );
+
+        return textObj == null ? "" : textObj.toString();
+    }
+
+    private String getPageAndToastText() {
+        String bodyText = "";
+        String toastText = "";
+
+        try {
+            bodyText = driver.findElement(By.tagName("body")).getText();
+        } catch (Exception ignored) {
+        }
+
+        try {
+            Object textObj = ((JavascriptExecutor) driver).executeScript(
+                    "let items = document.querySelectorAll('.global-toast-message');" +
+                            "return Array.from(items).map(e => e.innerText.trim()).join(' | ');"
+            );
+
+            toastText = textObj == null ? "" : textObj.toString();
+        } catch (Exception ignored) {
+        }
+
+        String result = bodyText + " | " + toastText;
+        System.out.println("PAGE + TOAST TEXT = " + result);
+
+        return result;
+    }
+
+    public void waitForUserToSeeToast() {
+        sleep(2000);
+    }
+
+    private void sleep(int milliseconds) {
+        try {
+            Thread.sleep(milliseconds);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
