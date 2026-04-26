@@ -1,21 +1,16 @@
 package com.vandapai.components;
 
+import com.vandapai.pages.common.BasePage;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.time.Duration;
-
-public class SidebarComponent {
-    private final WebDriver driver;
-    private final WebDriverWait wait;
+public class SidebarComponent extends BasePage {
 
     public SidebarComponent(WebDriver driver) {
-        this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        super(driver);
     }
 
     public void openQuestionManagement() {
