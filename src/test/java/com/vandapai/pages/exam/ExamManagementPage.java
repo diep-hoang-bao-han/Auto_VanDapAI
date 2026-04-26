@@ -51,19 +51,41 @@ public class ExamManagementPage extends BasePage {
 
     public void openExamSetListPage() {
         String currentUrl = driver.getCurrentUrl();
-        String baseUrl = currentUrl.substring(0, currentUrl.indexOf("/lecturer/"));
+        String baseUrl;
+
+        if (currentUrl.contains("/lecturer/")) {
+            baseUrl = currentUrl.substring(0, currentUrl.indexOf("/lecturer/"));
+        } else {
+            baseUrl = "http://127.0.0.1:8000";
+        }
 
         driver.get(baseUrl + "/lecturer/exam-codes/");
 
-        wait.until(driver -> {
-            String bodyText = driver.findElement(By.tagName("body")).getText();
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
-            return bodyText.contains("Quản lý đề thi")
-                    || bodyText.contains("Danh sách bộ đề")
-                    || bodyText.contains("Tạo đề thi");
+        shortWait.until(driver -> {
+            try {
+                String current = driver.getCurrentUrl();
+                String bodyText = driver.findElement(By.tagName("body")).getText();
+
+                System.out.println("EXAM SET LIST URL = " + current);
+                System.out.println("EXAM SET LIST BODY = " + bodyText);
+
+                return current.contains("/lecturer/exam-codes")
+                        && !current.matches(".*/lecturer/exam-codes/\\d+/?$")
+                        && (
+                        bodyText.contains("Danh sách bộ đề")
+                                || bodyText.contains("Tạo đề thi")
+                                || bodyText.contains("Mã bộ đề")
+                                || bodyText.contains("Số mã đề")
+                                || driver.findElements(By.id("examSetTableBody")).size() > 0
+                );
+            } catch (Exception e) {
+                return false;
+            }
         });
 
-        sleep(1000);
+        sleep(1500);
     }
 
     public void openFirstExamSetCard() {
@@ -71,20 +93,17 @@ public class ExamManagementPage extends BasePage {
 
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
-        WebElement firstCard = shortWait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath(
-                        "(//a[contains(@href,'/lecturer/exam-codes/') and not(contains(@href,'create'))]" +
-                                " | //div[contains(@class,'card') and .//text()[contains(.,'Mã đề') or contains(.,'Bộ đề')]]" +
-                                " | //tr[.//td])[1]"
-                )
-        ));
+        By firstExamSetRow = By.xpath("//*[@id='examSetTableBody']/tr[1]");
 
-        scrollToElement(firstCard);
+        WebElement firstRow = shortWait.until(ExpectedConditions.presenceOfElementLocated(firstExamSetRow));
+
+        scrollToElement(firstRow);
 
         try {
-            firstCard.click();
+            shortWait.until(ExpectedConditions.elementToBeClickable(firstRow));
+            firstRow.click();
         } catch (Exception e) {
-            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", firstCard);
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", firstRow);
         }
 
         sleep(1500);
@@ -124,5 +143,42 @@ public class ExamManagementPage extends BasePage {
         clickElement(examSetElement);
 
         sleep(1500);
+    }
+
+    //   lấy số lượng mã đề ở mã đè vừa tạo
+    private final By firstExamSetCodeCountCell = By.xpath("//*[@id='examSetTableBody']/tr[1]/td[4]");
+    public String getFirstExamSetCodeCountText() {
+        openExamSetListPage();
+
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+        WebElement cell = shortWait.until(
+                ExpectedConditions.visibilityOfElementLocated(firstExamSetCodeCountCell)
+        );
+
+        String text = cell.getText().trim();
+
+        System.out.println("FIRST EXAM SET CODE COUNT TEXT = " + text);
+
+        return text;
+    }
+    //    Kiểm tra số mã đề về 0
+    public boolean isFirstExamSetCodeCountZero() {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+        return shortWait.until(driver -> {
+            try {
+                WebElement cell = driver.findElement(firstExamSetCodeCountCell);
+                String text = cell.getText().trim();
+
+                System.out.println("FIRST EXAM SET CODE COUNT TEXT = " + text);
+
+                return text.equals("0")
+                        || text.contains("0 mã")
+                        || text.matches(".*\\b0\\b.*");
+            } catch (Exception e) {
+                return false;
+            }
+        });
     }
 }

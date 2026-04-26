@@ -393,4 +393,255 @@ public class ExamManagementTest extends BaseTest {
                 "Màn hình chi tiết bộ đề thi không hiển thị đúng thông tin"
         );
     }
+
+    @Test(priority = 11)
+    public void AT_QLDT_011_UpdateFirstExamCodeAndFirstQuestionSuccessfully() {
+        ExamManagementPage examManagementPage = goToExamManagementPage();
+        ExamCreatePage examCreatePage = new ExamCreatePage(driver);
+        ExamDetailPage examDetailPage = new ExamDetailPage(driver);
+
+        String examSetName = examManagementPage.generateExamSetName("AUTO_UPDATE_EXAM");
+
+        /*
+         * Tạo bộ đề mới để đảm bảo bộ đề chưa được sử dụng trong ca thi.
+         */
+        examManagementPage.clickCreateExamButton();
+
+        Assert.assertTrue(
+                examCreatePage.isCreateExamPageDisplayed(),
+                "Không điều hướng sang đúng màn hình Tạo đề thi"
+        );
+
+        examCreatePage.selectSubjectByValue("1");
+        examCreatePage.enterExamSetName(examSetName);
+        examCreatePage.enterAcademicYear("2024-2025");
+        examCreatePage.selectSemesterHK1();
+        examCreatePage.selectFirstAvailableQuestionBankSource();
+        examCreatePage.configValidExamMatrix();
+        examCreatePage.enterNumberOfExamCodes("2");
+        examCreatePage.tickAllowDuplicateQuestionsCheckbox();
+
+        examCreatePage.clickProceedButton();
+
+        Assert.assertTrue(
+                examCreatePage.isCreateExamConfirmPopupDisplayed(),
+                "Không hiển thị popup xác nhận tạo bộ đề"
+        );
+
+        examCreatePage.clickAcceptConfirmPopup();
+
+        Assert.assertTrue(
+                examCreatePage.isCreateExamSuccessfullyDisplayed(),
+                "Hệ thống chưa tạo bộ đề thành công thật sự"
+        );
+
+        /*
+         * Do search đang lỗi, mở bộ đề đầu tiên trong danh sách.
+         * Theo luồng hiện tại, bộ đề vừa tạo sẽ nằm đầu danh sách.
+         */
+        examManagementPage.openFirstExamSetCard();
+
+        Assert.assertTrue(
+                examDetailPage.isExamSetDetailPageDisplayed(),
+                "Không mở được màn hình chi tiết bộ đề vừa tạo"
+        );
+
+        /*
+         * Mở mã đề đầu tiên trong bộ đề.
+         */
+        examDetailPage.openFirstExamCodeCard();
+
+        Assert.assertTrue(
+                examDetailPage.isExamCodeEditorDisplayed(),
+                "Không hiển thị panel Biên tập Mã đề"
+        );
+
+        /*
+         * Cập nhật mã đề và nội dung câu hỏi đầu tiên.
+         * Mã đề dùng số random để hạn chế trùng với 101, 102.
+         */
+        String newExamCodeName = "9" + (System.currentTimeMillis() % 10000);
+        String newFirstQuestionContent = "Data warehouse là gì?";
+
+        examDetailPage.updateExamCodeName(newExamCodeName);
+        examDetailPage.updateFirstQuestionContent(newFirstQuestionContent);
+        examDetailPage.clickSaveCodeButton();
+
+        Assert.assertTrue(
+                examDetailPage.isSaveExamCodeSuccessDisplayed(),
+                "Không hiển thị thông báo lưu thay đổi mã đề thành công"
+        );
+
+        /*
+         * Refresh lại trang chi tiết bộ đề, mở lại mã đề đầu tiên để kiểm tra dữ liệu đã lưu.
+         */
+        driver.navigate().refresh();
+
+        Assert.assertTrue(
+                examDetailPage.isExamSetDetailPageDisplayed(),
+                "Sau khi refresh, màn hình chi tiết bộ đề không hiển thị"
+        );
+
+        examDetailPage.openFirstExamCodeCard();
+
+        Assert.assertTrue(
+                examDetailPage.isEditedExamCodeDataDisplayed(newExamCodeName, newFirstQuestionContent),
+                "Thông tin mã đề hoặc nội dung câu hỏi đầu tiên chưa được lưu đúng sau khi mở lại"
+        );
+    }
+
+    @Test(priority = 12)
+    public void AT_QLDT_012_ApproveAllExamCodesAndVerifyExamSetApproved() {
+        ExamManagementPage examManagementPage = goToExamManagementPage();
+        ExamCreatePage examCreatePage = new ExamCreatePage(driver);
+        ExamDetailPage examDetailPage = new ExamDetailPage(driver);
+
+        String examSetName = examManagementPage.generateExamSetName("AUTO_APPROVE_EXAM");
+
+        /*
+         * Tạo bộ đề mới có ít nhất 2 mã đề để duyệt hàng loạt.
+         */
+        examManagementPage.clickCreateExamButton();
+
+        Assert.assertTrue(
+                examCreatePage.isCreateExamPageDisplayed(),
+                "Không điều hướng sang đúng màn hình Tạo đề thi"
+        );
+
+        examCreatePage.selectSubjectByValue("1");
+        examCreatePage.enterExamSetName(examSetName);
+        examCreatePage.enterAcademicYear("2024-2025");
+        examCreatePage.selectSemesterHK1();
+        examCreatePage.selectFirstAvailableQuestionBankSource();
+        examCreatePage.configValidExamMatrix();
+        examCreatePage.enterNumberOfExamCodes("2");
+        examCreatePage.tickAllowDuplicateQuestionsCheckbox();
+
+        examCreatePage.clickProceedButton();
+
+        Assert.assertTrue(
+                examCreatePage.isCreateExamConfirmPopupDisplayed(),
+                "Không hiển thị popup xác nhận tạo bộ đề"
+        );
+
+        examCreatePage.clickAcceptConfirmPopup();
+
+        Assert.assertTrue(
+                examCreatePage.isCreateExamSuccessfullyDisplayed(),
+                "Hệ thống chưa tạo bộ đề thành công thật sự"
+        );
+
+        /*
+         * Do search đang lỗi, mở bộ đề đầu tiên trong danh sách.
+         * Bộ đề vừa tạo thường nằm ở đầu bảng.
+         */
+        examManagementPage.openFirstExamSetCard();
+
+        Assert.assertTrue(
+                examDetailPage.isExamSetDetailPageDisplayed(),
+                "Không mở được màn hình chi tiết bộ đề vừa tạo"
+        );
+
+        Assert.assertTrue(
+                examDetailPage.isExamSetUnapprovedStatusDisplayed(),
+                "Trạng thái ban đầu của bộ đề không phải CHƯA DUYỆT"
+        );
+
+        /*
+         * Chọn tất cả mã đề và duyệt hàng loạt.
+         */
+        examDetailPage.selectAllExamCodes();
+        examDetailPage.clickApproveAllExamCodesButton();
+        examDetailPage.confirmApproveAllExamCodesPopup();
+
+        /*
+         * Refresh để kiểm tra trạng thái cuối cùng được lưu thật.
+         */
+        driver.navigate().refresh();
+
+        Assert.assertTrue(
+                examDetailPage.isExamSetDetailPageDisplayed(),
+                "Sau khi refresh, màn hình chi tiết bộ đề không hiển thị"
+        );
+
+        Assert.assertTrue(
+                examDetailPage.isExamSetApprovedStatusDisplayed(),
+                "Sau khi duyệt tất cả mã đề, trạng thái bộ đề chưa chuyển sang ĐÃ DUYỆT"
+        );
+    }
+
+    @Test(priority = 13)
+    public void AT_QLDT_013_DeleteAllExamCodesAndVerifyCodeCountIsZero() {
+        ExamManagementPage examManagementPage = goToExamManagementPage();
+        ExamCreatePage examCreatePage = new ExamCreatePage(driver);
+        ExamDetailPage examDetailPage = new ExamDetailPage(driver);
+
+        String examSetName = examManagementPage.generateExamSetName("AUTO_DELETE_CODES_EXAM");
+
+        /*
+         * Tạo bộ đề mới có ít nhất 2 mã đề để kiểm tra xóa hàng loạt mã đề.
+         */
+        examManagementPage.clickCreateExamButton();
+
+        Assert.assertTrue(
+                examCreatePage.isCreateExamPageDisplayed(),
+                "Không điều hướng sang đúng màn hình Tạo đề thi"
+        );
+
+        examCreatePage.selectSubjectByValue("1");
+        examCreatePage.enterExamSetName(examSetName);
+        examCreatePage.enterAcademicYear("2024-2025");
+        examCreatePage.selectSemesterHK1();
+        examCreatePage.selectFirstAvailableQuestionBankSource();
+        examCreatePage.configValidExamMatrix();
+        examCreatePage.enterNumberOfExamCodes("2");
+        examCreatePage.tickAllowDuplicateQuestionsCheckbox();
+
+        examCreatePage.clickProceedButton();
+
+        Assert.assertTrue(
+                examCreatePage.isCreateExamConfirmPopupDisplayed(),
+                "Không hiển thị popup xác nhận tạo bộ đề"
+        );
+
+        examCreatePage.clickAcceptConfirmPopup();
+
+        Assert.assertTrue(
+                examCreatePage.isCreateExamSuccessfullyDisplayed(),
+                "Hệ thống chưa tạo bộ đề thành công thật sự"
+        );
+
+        /*
+         * Do search đang lỗi, mở bộ đề đầu tiên trong danh sách.
+         * Bộ đề vừa tạo thường nằm đầu bảng.
+         */
+        examManagementPage.openFirstExamSetCard();
+
+        Assert.assertTrue(
+                examDetailPage.isExamSetDetailPageDisplayed(),
+                "Không mở được màn hình chi tiết bộ đề vừa tạo"
+        );
+
+        /*
+         * Chọn tất cả mã đề và xóa hàng loạt.
+         */
+        examDetailPage.selectAllExamCodes();
+        examDetailPage.clickDeleteAllExamCodesButton();
+        examDetailPage.confirmDeleteExamCodesPopup();
+
+        Assert.assertTrue(
+                examDetailPage.isDeleteExamCodesSuccessDisplayed(),
+                "Không hiển thị thông báo xóa mã đề thành công"
+        );
+
+        /*
+         * Quay lại danh sách bộ đề và kiểm tra cột số mã đề của dòng đầu tiên đã về 0.
+         */
+        examManagementPage.openExamSetListPage();
+
+        Assert.assertTrue(
+                examManagementPage.isFirstExamSetCodeCountZero(),
+                "Số lượng mã đề của bộ đề vừa xóa chưa về 0"
+        );
+    }
 }
