@@ -147,4 +147,71 @@ public class QuestionManagementPage extends BasePage {
 
         sleep(1500);
     }
+    private final By firstQuestionBankCard = By.xpath("//*[@id='bankListContainer']/div/div[1]");
+    public void openFirstQuestionBankCard() {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+        WebElement firstCard = shortWait.until(
+                ExpectedConditions.presenceOfElementLocated(firstQuestionBankCard)
+        );
+
+        ((JavascriptExecutor) driver).executeScript(
+                "arguments[0].scrollIntoView({block:'center', inline:'center'});",
+                firstCard
+        );
+
+        try {
+            shortWait.until(ExpectedConditions.elementToBeClickable(firstCard));
+            firstCard.click();
+        } catch (Exception e) {
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", firstCard);
+        }
+
+        sleep(1500);
+    }
+
+    public boolean isQuestionBankNotDisplayedInList(String bankName) {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+        return shortWait.until(driver -> {
+            try {
+                wait.until(ExpectedConditions.visibilityOfElementLocated(bankListContainer));
+
+                String bodyText = driver.findElement(By.tagName("body")).getText();
+
+                System.out.println("QUESTION BANK LIST AFTER DELETE = " + bodyText);
+                System.out.println("DELETED BANK NAME = " + bankName);
+
+                return !bodyText.contains(bankName);
+            } catch (Exception e) {
+                return false;
+            }
+        });
+    }
+    public void openQuestionBankListPage() {
+        String currentUrl = driver.getCurrentUrl();
+        String baseUrl;
+
+        if (currentUrl.contains("/lecturer/")) {
+            baseUrl = currentUrl.substring(0, currentUrl.indexOf("/lecturer/"));
+        } else {
+            baseUrl = "http://127.0.0.1:8000";
+        }
+
+        driver.get(baseUrl + "/lecturer/questions/");
+
+        wait.until(driver -> {
+            try {
+                String bodyText = driver.findElement(By.tagName("body")).getText();
+
+                return bodyText.contains("Quản lý câu hỏi")
+                        || bodyText.contains("Tạo ngân hàng mới")
+                        || driver.findElements(By.id("subjectSelect")).size() > 0;
+            } catch (Exception e) {
+                return false;
+            }
+        });
+
+        sleep(1000);
+    }
 }

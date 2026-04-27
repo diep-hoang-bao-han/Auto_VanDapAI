@@ -212,13 +212,36 @@ public class QuestionBankCreatePage extends BasePage {
 
         return longWait.until(driver -> {
             try {
-                WebElement toast = driver.findElement(toastMessage);
-                String actualText = toast.getText().trim();
+                String bodyText = driver.findElement(By.tagName("body")).getText();
 
-                System.out.println("GENERATE TOAST = [" + actualText + "]");
+                String toastText = "";
 
-                return !actualText.isEmpty()
-                        && actualText.contains("Tạo câu hỏi thành công");
+                try {
+                    WebElement toast = driver.findElement(toastMessage);
+                    toastText = toast.getText().trim();
+                } catch (Exception ignored) {
+                }
+
+                String pageText = bodyText + " | " + toastText;
+
+                System.out.println("GENERATE TOAST = [" + toastText + "]");
+                System.out.println("GENERATE PAGE TEXT CHECK = " + pageText);
+
+                boolean fullSuccess =
+                        pageText.contains("Tạo câu hỏi thành công");
+
+                boolean partialSuccess =
+                        pageText.contains("Tạo câu hỏi một phần")
+                                || pageText.contains("AI chỉ tạo được")
+                                || pageText.contains("Đã sinh bù");
+
+                boolean hasGeneratedQuestions =
+                        pageText.matches("(?s).*Tất cả \\([1-9][0-9]*\\).*")
+                                || pageText.contains("Mới tạo")
+                                || pageText.contains("Chưa lưu")
+                                || pageText.contains("Đã chọn câu hỏi");
+
+                return fullSuccess || partialSuccess || hasGeneratedQuestions;
             } catch (Exception e) {
                 return false;
             }

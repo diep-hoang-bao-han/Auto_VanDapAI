@@ -333,4 +333,188 @@ public class QuestionManagementTest extends BaseTest {
                 "Chi tiết ngân hàng câu hỏi không hiển thị danh sách câu hỏi hoặc không có câu hỏi nào"
         );
     }
+
+    @Test(priority = 9)
+    public void AT_QLCH_009_UpdateQuestionContentSuccessfully() {
+        /*
+         * Tạo mới ngân hàng câu hỏi có dữ liệu thật để testcase chạy độc lập.
+         * Sau khi tạo xong, helper sẽ quay lại danh sách ngân hàng câu hỏi và reload danh sách.
+         */
+        String bankName = createQuestionBankWithValidQuestions();
+
+        QuestionManagementPage questionManagementPage = new QuestionManagementPage(driver);
+        QuestionBankDetailPage questionBankDetailPage = new QuestionBankDetailPage(driver);
+
+        /*
+         * Do ngân hàng câu hỏi vừa tạo nằm ở card đầu tiên trong danh sách,
+         * mở trực tiếp card đầu tiên thay vì tìm theo tên.
+         */
+        questionManagementPage.openFirstQuestionBankCard();
+
+        Assert.assertTrue(
+                questionBankDetailPage.isQuestionBankDetailDisplayed(bankName),
+                "Không mở được màn hình chi tiết ngân hàng câu hỏi vừa tạo: " + bankName
+        );
+
+        /*
+         * Sửa nội dung câu hỏi đầu tiên trong ngân hàng câu hỏi.
+         */
+        String newQuestionContent = "Khái niệm \"Data Warehouse và Data Mining\" là gì?";
+
+        questionBankDetailPage.clickEditFirstQuestionButton();
+        questionBankDetailPage.updateFirstQuestionContent(newQuestionContent);
+        questionBankDetailPage.clickSaveFirstQuestionButton();
+
+        Assert.assertTrue(
+                questionBankDetailPage.isUpdateQuestionSuccessToastDisplayed(),
+                "Không hiển thị thông báo Đã lưu thành công sau khi cập nhật câu hỏi"
+        );
+
+        /*
+         * Refresh lại màn hình chi tiết để kiểm tra dữ liệu đã được lưu thật.
+         */
+        driver.navigate().refresh();
+
+        Assert.assertTrue(
+                questionBankDetailPage.isQuestionBankDetailDisplayed(bankName),
+                "Sau khi refresh, màn hình chi tiết ngân hàng câu hỏi không hiển thị"
+        );
+
+        Assert.assertTrue(
+                questionBankDetailPage.isFirstQuestionContentDisplayed(newQuestionContent),
+                "Nội dung câu hỏi sau khi refresh chưa đúng với nội dung đã cập nhật"
+        );
+    }
+
+    @Test(priority = 10)
+    public void AT_QLCH_010_BulkUpdateQuestionLevelSuccessfully() {
+        /*
+         * Tạo mới ngân hàng câu hỏi có dữ liệu thật để testcase chạy độc lập.
+         * Sau khi tạo xong, helper sẽ quay lại danh sách ngân hàng câu hỏi và reload danh sách.
+         */
+        String bankName = createQuestionBankWithValidQuestions();
+
+        QuestionManagementPage questionManagementPage = new QuestionManagementPage(driver);
+        QuestionBankDetailPage questionBankDetailPage = new QuestionBankDetailPage(driver);
+
+        /*
+         * Do ngân hàng câu hỏi vừa tạo nằm ở card đầu tiên trong danh sách,
+         * mở trực tiếp card đầu tiên thay vì tìm theo tên.
+         */
+        questionManagementPage.openFirstQuestionBankCard();
+
+        Assert.assertTrue(
+                questionBankDetailPage.isQuestionBankDetailDisplayed(bankName),
+                "Không mở được màn hình chi tiết ngân hàng câu hỏi vừa tạo: " + bankName
+        );
+
+        /*
+         * Chọn 3 câu hỏi đầu tiên và đổi mức độ hàng loạt sang KHÓ.
+         */
+        questionBankDetailPage.selectFirstThreeQuestions();
+        questionBankDetailPage.clickBulkChangeLevelButton();
+        questionBankDetailPage.selectHardLevelInBulkModal();
+        questionBankDetailPage.clickConfirmBulkLevelButton();
+
+        Assert.assertTrue(
+                questionBankDetailPage.isBulkUpdateLevelSuccessToastDisplayed(),
+                "Không hiển thị thông báo Thành công sau khi thay đổi hàng loạt mức độ câu hỏi"
+        );
+    }
+
+    @Test(priority = 11)
+    public void AT_QLCH_011_BulkDeleteQuestionsSuccessfully() {
+        /*
+         * Tạo mới ngân hàng câu hỏi có dữ liệu thật để testcase chạy độc lập.
+         * Sau khi tạo xong, helper sẽ quay lại danh sách ngân hàng câu hỏi và reload danh sách.
+         */
+        String bankName = createQuestionBankWithValidQuestions();
+
+        QuestionManagementPage questionManagementPage = new QuestionManagementPage(driver);
+        QuestionBankDetailPage questionBankDetailPage = new QuestionBankDetailPage(driver);
+
+        /*
+         * Do ngân hàng câu hỏi vừa tạo nằm ở card đầu tiên trong danh sách,
+         * mở trực tiếp card đầu tiên thay vì tìm theo tên.
+         */
+        questionManagementPage.openFirstQuestionBankCard();
+
+        Assert.assertTrue(
+                questionBankDetailPage.isQuestionBankDetailDisplayed(bankName),
+                "Không mở được màn hình chi tiết ngân hàng câu hỏi vừa tạo: " + bankName
+        );
+
+        /*
+         * Ghi nhận tổng số câu hỏi trước khi xóa.
+         */
+        int beforeCount = questionBankDetailPage.getTotalQuestionCountFromAllTab();
+
+        Assert.assertTrue(
+                beforeCount >= 5,
+                "Ngân hàng câu hỏi cần có ít nhất 5 câu hỏi để kiểm tra xóa hàng loạt. Số câu hiện tại: " + beforeCount
+        );
+
+        /*
+         * Chọn 3 câu hỏi đầu tiên và xóa hàng loạt.
+         */
+        int deletedCount = 3;
+
+        questionBankDetailPage.selectFirstThreeQuestions();
+        questionBankDetailPage.clickBulkDeleteQuestionButton();
+        questionBankDetailPage.confirmBulkDeleteQuestionPopup();
+
+        Assert.assertTrue(
+                questionBankDetailPage.isBulkDeleteQuestionSuccessToastDisplayed(),
+                "Không hiển thị thông báo xóa hàng loạt câu hỏi thành công"
+        );
+
+        /*
+         * Kiểm tra tổng số câu hỏi giảm đúng bằng số câu đã chọn.
+         */
+        Assert.assertTrue(
+                questionBankDetailPage.isQuestionCountDecreasedBy(beforeCount, deletedCount),
+                "Tổng số câu hỏi không giảm đúng " + deletedCount + " câu sau khi xóa hàng loạt"
+        );
+    }
+
+    @Test(priority = 12)
+    public void AT_QLCH_012_DeleteQuestionBankSuccessfully() {
+        /*
+         * Tạo mới ngân hàng câu hỏi có dữ liệu thật để testcase chạy độc lập.
+         * Sau khi tạo xong, helper sẽ quay lại danh sách ngân hàng câu hỏi và reload danh sách.
+         */
+        String bankName = createQuestionBankWithValidQuestions();
+
+        QuestionManagementPage questionManagementPage = new QuestionManagementPage(driver);
+        QuestionBankDetailPage questionBankDetailPage = new QuestionBankDetailPage(driver);
+
+        /*
+         * Do ngân hàng câu hỏi vừa tạo nằm ở card đầu tiên trong danh sách,
+         * mở trực tiếp card đầu tiên thay vì tìm theo tên.
+         */
+        questionManagementPage.openFirstQuestionBankCard();
+
+        Assert.assertTrue(
+                questionBankDetailPage.isQuestionBankDetailDisplayed(bankName),
+                "Không mở được màn hình chi tiết ngân hàng câu hỏi vừa tạo: " + bankName
+        );
+
+        /*
+         * Xóa ngân hàng câu hỏi vừa tạo.
+         */
+        questionBankDetailPage.clickDeleteQuestionBankButton();
+        questionBankDetailPage.confirmDeleteQuestionBankPopup(bankName);
+
+        /*
+         * Sau khi xóa, quay về danh sách ngân hàng câu hỏi và kiểm tra bankName không còn tồn tại.
+         */
+        questionManagementPage.openQuestionBankListPage();
+        questionManagementPage.selectSubjectByVisibleText(SUBJECT_NAME);
+        questionManagementPage.reloadQuestionBankList();
+
+        Assert.assertTrue(
+                questionManagementPage.isQuestionBankNotDisplayedInList(bankName),
+                "Ngân hàng câu hỏi vừa xóa vẫn còn hiển thị trong danh sách: " + bankName
+        );
+    }
 }
