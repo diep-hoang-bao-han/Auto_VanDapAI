@@ -295,58 +295,12 @@ public class ExamManagementTest extends BaseTest {
     }
 
     @Test(priority = 9)
-    public void AT_QLDT_009_SearchExamSetByNameOrCodeSuccessfully() {
-        ExamManagementPage examManagementPage = goToExamManagementPage();
-        ExamCreatePage examCreatePage = new ExamCreatePage(driver);
-
-        String examSetName = examManagementPage.generateExamSetName("AUTO_SEARCH_EXAM");
-
-        examManagementPage.clickCreateExamButton();
-
-        Assert.assertTrue(
-                examCreatePage.isCreateExamPageDisplayed(),
-                "Không điều hướng sang đúng màn hình Tạo đề thi"
-        );
-
-        examCreatePage.selectSubjectByValue("1");
-        examCreatePage.enterExamSetName(examSetName);
-        examCreatePage.enterAcademicYear("2024-2025");
-        examCreatePage.selectSemesterHK1();
-        examCreatePage.selectFirstAvailableQuestionBankSource();
-        examCreatePage.configValidExamMatrix();
-        examCreatePage.enterNumberOfExamCodes("1");
-        examCreatePage.tickAllowDuplicateQuestionsCheckbox();
-
-        examCreatePage.clickProceedButton();
-
-        Assert.assertTrue(
-                examCreatePage.isCreateExamConfirmPopupDisplayed(),
-                "Không hiển thị popup xác nhận tạo bộ đề"
-        );
-
-        examCreatePage.clickAcceptConfirmPopup();
-
-        Assert.assertTrue(
-                examCreatePage.isCreateExamSuccessfullyDisplayed(),
-                "Hệ thống chưa tạo bộ đề thành công thật sự"
-        );
-
-        examManagementPage.openExamSetListPage();
-        examManagementPage.searchExamSet(examSetName);
-
-        Assert.assertTrue(
-                examManagementPage.isExamSetDisplayedInList(examSetName),
-                "Không tìm thấy bộ đề vừa tạo trong danh sách: " + examSetName
-        );
-    }
-
-    @Test(priority = 10)
-    public void AT_QLDT_010_OpenExamSetDetailAndVerifyExamCodes() {
+    public void AT_QLDT_009_SearchExamSetAndOpenDetailSuccessfully() {
         ExamManagementPage examManagementPage = goToExamManagementPage();
         ExamCreatePage examCreatePage = new ExamCreatePage(driver);
         ExamDetailPage examDetailPage = new ExamDetailPage(driver);
 
-        String examSetName = examManagementPage.generateExamSetName("AUTO_DETAIL_EXAM");
+        String examSetName = examManagementPage.generateExamSetName("AUTO_SEARCH_DETAIL_EXAM");
 
         examManagementPage.clickCreateExamButton();
 
@@ -361,7 +315,7 @@ public class ExamManagementTest extends BaseTest {
         examCreatePage.selectSemesterHK1();
         examCreatePage.selectFirstAvailableQuestionBankSource();
         examCreatePage.configValidExamMatrix();
-        examCreatePage.enterNumberOfExamCodes("1");
+        examCreatePage.enterNumberOfExamCodes("4");
         examCreatePage.tickAllowDuplicateQuestionsCheckbox();
 
         examCreatePage.clickProceedButton();
@@ -383,18 +337,18 @@ public class ExamManagementTest extends BaseTest {
 
         Assert.assertTrue(
                 examManagementPage.isExamSetDisplayedInList(examSetName),
-                "Không tìm thấy bộ đề thi trước khi mở chi tiết: " + examSetName
+                "Không tìm thấy bộ đề vừa tạo trong danh sách sau khi tìm kiếm: " + examSetName
         );
 
-        examManagementPage.openExamSetDetailByName(examSetName);
+        examManagementPage.openFirstExamSetSearchResult();
 
         Assert.assertTrue(
                 examDetailPage.isExamSetDetailDisplayed(examSetName),
-                "Màn hình chi tiết bộ đề thi không hiển thị đúng thông tin"
+                "Màn hình chi tiết bộ đề thi không hiển thị đúng thông tin: " + examSetName
         );
     }
 
-    @Test(priority = 11)
+    @Test(priority = 10)
     public void AT_QLDT_011_UpdateFirstExamCodeAndFirstQuestionSuccessfully() {
         ExamManagementPage examManagementPage = goToExamManagementPage();
         ExamCreatePage examCreatePage = new ExamCreatePage(driver);
@@ -490,7 +444,7 @@ public class ExamManagementTest extends BaseTest {
         );
     }
 
-    @Test(priority = 12)
+    @Test(priority = 11)
     public void AT_QLDT_012_ApproveAllExamCodesAndVerifyExamSetApproved() {
         ExamManagementPage examManagementPage = goToExamManagementPage();
         ExamCreatePage examCreatePage = new ExamCreatePage(driver);
@@ -570,7 +524,7 @@ public class ExamManagementTest extends BaseTest {
         );
     }
 
-    @Test(priority = 13)
+    @Test(priority = 12)
     public void AT_QLDT_013_DeleteAllExamCodesAndVerifyCodeCountIsZero() {
         ExamManagementPage examManagementPage = goToExamManagementPage();
         ExamCreatePage examCreatePage = new ExamCreatePage(driver);

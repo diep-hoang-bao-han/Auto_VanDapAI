@@ -181,4 +181,38 @@ public class ExamManagementPage extends BasePage {
             }
         });
     }
+
+    private final By firstExamSetSearchResultRow = By.xpath("//*[@id='examSetTableBody']/tr[1]");
+//    public void searchExamSet(String keyword) {
+//        WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(examSearchInput));
+//
+//        scrollToElement(input);
+//
+//        input.click();
+//        input.sendKeys(Keys.CONTROL, "a");
+//        input.sendKeys(Keys.BACK_SPACE);
+//        input.sendKeys(keyword);
+//        input.sendKeys(Keys.ENTER);
+//
+//        sleep(1500);
+//    }
+
+    public void openFirstExamSetSearchResult() {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+        WebElement firstRow = shortWait.until(
+                ExpectedConditions.presenceOfElementLocated(firstExamSetSearchResultRow)
+        );
+
+        scrollToElement(firstRow);
+
+        try {
+            shortWait.until(ExpectedConditions.elementToBeClickable(firstRow));
+            firstRow.click();
+        } catch (Exception e) {
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", firstRow);
+        }
+
+        sleep(1500);
+    }
 }

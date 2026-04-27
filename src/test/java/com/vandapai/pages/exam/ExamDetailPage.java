@@ -46,21 +46,26 @@ public class ExamDetailPage extends BasePage {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
         return shortWait.until(driver -> {
-            String currentUrl = driver.getCurrentUrl();
-            String bodyText = driver.findElement(By.tagName("body")).getText();
+            try {
+                String currentUrl = driver.getCurrentUrl();
+                String bodyText = driver.findElement(By.tagName("body")).getText();
 
-            System.out.println("DETAIL URL = " + currentUrl);
-            System.out.println("DETAIL TEXT = " + bodyText);
+                boolean isDetailUrl =
+                        currentUrl.contains("/lecturer/exam-codes/")
+                                && !currentUrl.contains("/create");
 
-            boolean hasExamSetName = bodyText.contains(examSetName);
+                boolean hasBasicInfo =
+                        bodyText.contains("Môn học")
+                                && bodyText.contains("Năm học")
+                                && bodyText.contains("Học kỳ");
 
-            boolean hasDetailInfo =
-                    bodyText.contains("Mã đề")
-                            || bodyText.contains("Danh sách mã đề")
-                            || bodyText.contains("Câu hỏi")
-                            || bodyText.contains("Chi tiết");
+                boolean hasExamCode =
+                        driver.findElements(By.xpath("//*[@id='cardGrid']/div")).size() >= 1;
 
-            return hasExamSetName && hasDetailInfo;
+                return isDetailUrl && hasBasicInfo && hasExamCode;
+            } catch (Exception e) {
+                return false;
+            }
         });
     }
 

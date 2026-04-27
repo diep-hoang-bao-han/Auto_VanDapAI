@@ -81,7 +81,12 @@ public class ExamCreatePage extends BasePage {
     }
 
     public void selectSubjectByValue(String subjectValue) {
-        WebElement dropdown = wait.until(ExpectedConditions.presenceOfElementLocated(subjectDropdown));
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(30));
+
+        WebElement dropdown = shortWait.until(
+                ExpectedConditions.presenceOfElementLocated(subjectDropdown)
+        );
+
         scrollToElement(dropdown);
 
         try {
@@ -90,14 +95,37 @@ public class ExamCreatePage extends BasePage {
         } catch (Exception e) {
             ((JavascriptExecutor) driver).executeScript(
                     "arguments[0].value = arguments[1];" +
+                            "arguments[0].dispatchEvent(new Event('input', { bubbles: true }));" +
                             "arguments[0].dispatchEvent(new Event('change', { bubbles: true }));",
                     dropdown,
                     subjectValue
             );
         }
 
-        wait.until(driver -> driver.getCurrentUrl().contains("subject_id=" + subjectValue));
-        wait.until(ExpectedConditions.elementToBeClickable(examSetNameInput));
+        shortWait.until(driver -> {
+            try {
+                String actualValue = driver.findElement(subjectDropdown).getAttribute("value");
+                String bodyText = driver.findElement(By.tagName("body")).getText();
+
+                System.out.println("SUBJECT SELECTED VALUE = " + actualValue);
+                System.out.println("AFTER SELECT SUBJECT URL = " + driver.getCurrentUrl());
+
+                boolean selectedCorrectSubject = subjectValue.equals(actualValue);
+
+                boolean formReady =
+                        driver.findElements(examSetNameInput).size() > 0
+                                && driver.findElements(academicYearInput).size() > 0
+                                && (
+                                bodyText.contains("Nguồn câu hỏi")
+                                        || bodyText.contains("Ngân hàng câu hỏi")
+                                        || driver.findElements(sourceBanksSelect).size() > 0
+                        );
+
+                return selectedCorrectSubject && formReady;
+            } catch (Exception e) {
+                return false;
+            }
+        });
 
         sleep(1000);
     }
