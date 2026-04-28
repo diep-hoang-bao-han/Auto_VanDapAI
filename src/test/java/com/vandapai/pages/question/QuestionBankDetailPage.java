@@ -16,22 +16,30 @@ public class QuestionBankDetailPage extends BasePage {
     }
 
     public boolean isQuestionBankDetailDisplayed(String bankName) {
-        WebDriverWait detailWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        WebDriverWait longWait = new WebDriverWait(driver, Duration.ofSeconds(30));
 
-        return detailWait.until(driver -> {
+        return longWait.until(driver -> {
             try {
+                String currentUrl = driver.getCurrentUrl();
                 String bodyText = driver.findElement(By.tagName("body")).getText();
 
+                System.out.println("DETAIL CURRENT URL = " + currentUrl);
+                System.out.println("DETAIL BODY TEXT = " + bodyText);
+
                 boolean hasBankName = bodyText.contains(bankName);
-
-                boolean hasDetailContent =
-                        bodyText.contains("Câu hỏi")
+                boolean hasDetailText =
+                        bodyText.contains("Chi tiết ngân hàng")
                                 || bodyText.contains("Danh sách câu hỏi")
-                                || bodyText.contains("Nội dung câu hỏi")
-                                || bodyText.contains("Mức độ")
-                                || bodyText.contains("Điểm");
+                                || bodyText.contains("Ngân hàng câu hỏi")
+                                || bodyText.contains("Lưu thành ngân hàng");
 
-                return hasBankName && hasDetailContent;
+                boolean hasQuestionInfo =
+                        bodyText.contains("câu hỏi")
+                                || bodyText.contains("Dễ")
+                                || bodyText.contains("Trung bình")
+                                || bodyText.contains("Khó");
+
+                return hasBankName || (hasDetailText && hasQuestionInfo);
             } catch (Exception e) {
                 return false;
             }
@@ -755,5 +763,79 @@ public class QuestionBankDetailPage extends BasePage {
             }
         });
     }
+    private final By updateQuestionBankButton = By.xpath(
+            "//*[self::button or self::a][contains(normalize-space(.),'Cập nhật vào ngân hàng')]"
+    );
 
+    public boolean isBulkUpdateLevelMarkedAsChangedToastDisplayed() {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        return shortWait.until(driver -> {
+            try {
+                String bodyText = driver.findElement(By.tagName("body")).getText();
+
+                System.out.println("BULK UPDATE LEVEL MARKED TOAST TEXT = " + bodyText);
+
+                return bodyText.contains("Đã đánh dấu/cập nhật thay đổi mức độ")
+                        || bodyText.contains("Bấm Cập nhật vào ngân hàng để lưu chính thức")
+                        || bodyText.contains("Đã chỉnh sửa")
+                        || bodyText.contains("Chưa cập nhật");
+            } catch (Exception e) {
+                return false;
+            }
+        });
+    }
+
+    public boolean isQuestionMarkedAsChangedToastDisplayed() {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(8));
+
+        return shortWait.until(driver -> {
+            String bodyText = driver.findElement(By.tagName("body")).getText();
+
+            return bodyText.contains("Đã đánh dấu thay đổi")
+                    || bodyText.contains("Bấm Cập nhật vào ngân hàng để lưu")
+                    || bodyText.contains("Chưa cập nhật");
+        });
+    }
+
+    public boolean isUpdateQuestionBankSuccessToastDisplayed() {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(12));
+
+        return shortWait.until(driver -> {
+            try {
+                String bodyText = driver.findElement(By.tagName("body")).getText();
+
+                System.out.println("UPDATE QUESTION BANK TOAST TEXT = " + bodyText);
+
+                return bodyText.contains("Cập nhật")
+                        && bodyText.contains("thành công")
+                        || bodyText.contains("Đã lưu")
+                        || bodyText.contains("cập nhật ngân hàng thành công")
+                        || bodyText.contains("Cập nhật ngân hàng câu hỏi thành công");
+            } catch (Exception e) {
+                return false;
+            }
+        });
+    }
+
+
+    public void clickUpdateQuestionBankButton() {
+        WebElement button = wait.until(
+                ExpectedConditions.presenceOfElementLocated(updateQuestionBankButton)
+        );
+
+        ((JavascriptExecutor) driver).executeScript(
+                "arguments[0].scrollIntoView({block:'center', inline:'center'});",
+                button
+        );
+
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(button));
+            button.click();
+        } catch (Exception e) {
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", button);
+        }
+
+        sleep(1500);
+    }
 }

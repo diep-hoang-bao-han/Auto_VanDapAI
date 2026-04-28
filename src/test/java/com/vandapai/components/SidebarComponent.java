@@ -74,4 +74,16 @@ public class SidebarComponent extends BasePage {
 
         wait.until(ExpectedConditions.urlContains("/lecturer/exam-codes"));
     }
+
+    public void openExamSessionManagement() {
+        WebElement menuExamSession = wait.until(
+                ExpectedConditions.elementToBeClickable(By.xpath("//*[@id='sidebar']/nav/a[2]"))
+        );
+
+        try {
+            menuExamSession.click();
+        } catch (Exception e) {
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", menuExamSession);
+        }
+    }
 }

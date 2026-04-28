@@ -349,7 +349,7 @@ public class ExamManagementTest extends BaseTest {
     }
 
     @Test(priority = 10)
-    public void AT_QLDT_011_UpdateFirstExamCodeAndFirstQuestionSuccessfully() {
+    public void AT_QLDT_010_UpdateFirstExamCodeAndFirstQuestionSuccessfully() {
         ExamManagementPage examManagementPage = goToExamManagementPage();
         ExamCreatePage examCreatePage = new ExamCreatePage(driver);
         ExamDetailPage examDetailPage = new ExamDetailPage(driver);
@@ -445,7 +445,7 @@ public class ExamManagementTest extends BaseTest {
     }
 
     @Test(priority = 11)
-    public void AT_QLDT_012_ApproveAllExamCodesAndVerifyExamSetApproved() {
+    public void AT_QLDT_011_ApproveAllExamCodesAndVerifyExamSetApproved() {
         ExamManagementPage examManagementPage = goToExamManagementPage();
         ExamCreatePage examCreatePage = new ExamCreatePage(driver);
         ExamDetailPage examDetailPage = new ExamDetailPage(driver);
@@ -525,7 +525,7 @@ public class ExamManagementTest extends BaseTest {
     }
 
     @Test(priority = 12)
-    public void AT_QLDT_013_DeleteAllExamCodesAndVerifyCodeCountIsZero() {
+    public void AT_QLDT_012_DeleteAllExamCodesAndVerifyCodeCountIsZero() {
         ExamManagementPage examManagementPage = goToExamManagementPage();
         ExamCreatePage examCreatePage = new ExamCreatePage(driver);
         ExamDetailPage examDetailPage = new ExamDetailPage(driver);

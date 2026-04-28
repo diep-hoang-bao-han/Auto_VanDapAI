@@ -1,2 +1,12 @@
-<class name="com.vandapai.tests.question.QuestionManagementTest"/>
-<class name="com.vandapai.tests.exam.ExamManagementTest"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<suite name="Automation Test Suite">
+    <test name="Van Dap AI Automation Tests">
+        <classes>
+            <class name="com.vandapai.tests.question.QuestionManagementTest"/>
+            <class name="com.vandapai.tests.exam.ExamManagementTest"/>
+            <class name="com.vandapai.tests.exam_session.ExamSessionTest"/>
+        </classes>
+    </test>
+</suite>

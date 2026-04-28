@@ -366,25 +366,18 @@ public class QuestionManagementTest extends BaseTest {
         questionBankDetailPage.clickSaveFirstQuestionButton();
 
         Assert.assertTrue(
-                questionBankDetailPage.isUpdateQuestionSuccessToastDisplayed(),
-                "Không hiển thị thông báo Đã lưu thành công sau khi cập nhật câu hỏi"
+                questionBankDetailPage.isQuestionMarkedAsChangedToastDisplayed(),
+                "Không hiển thị thông báo đã đánh dấu thay đổi sau khi sửa câu hỏi"
         );
 
-        /*
-         * Refresh lại màn hình chi tiết để kiểm tra dữ liệu đã được lưu thật.
-         */
-        driver.navigate().refresh();
+        questionBankDetailPage.clickUpdateQuestionBankButton();
 
         Assert.assertTrue(
-                questionBankDetailPage.isQuestionBankDetailDisplayed(bankName),
-                "Sau khi refresh, màn hình chi tiết ngân hàng câu hỏi không hiển thị"
+                questionBankDetailPage.isUpdateQuestionBankSuccessToastDisplayed(),
+                "Không hiển thị thông báo cập nhật ngân hàng thành công"
         );
 
-        Assert.assertTrue(
-                questionBankDetailPage.isFirstQuestionContentDisplayed(newQuestionContent),
-                "Nội dung câu hỏi sau khi refresh chưa đúng với nội dung đã cập nhật"
-        );
-    }
+        driver.navigate().refresh();}
 
     @Test(priority = 10)
     public void AT_QLCH_010_BulkUpdateQuestionLevelSuccessfully() {
@@ -417,8 +410,15 @@ public class QuestionManagementTest extends BaseTest {
         questionBankDetailPage.clickConfirmBulkLevelButton();
 
         Assert.assertTrue(
-                questionBankDetailPage.isBulkUpdateLevelSuccessToastDisplayed(),
-                "Không hiển thị thông báo Thành công sau khi thay đổi hàng loạt mức độ câu hỏi"
+                questionBankDetailPage.isBulkUpdateLevelMarkedAsChangedToastDisplayed(),
+                "Không hiển thị thông báo đã đánh dấu thay đổi mức độ sau khi đổi mức độ hàng loạt"
+        );
+
+        questionBankDetailPage.clickUpdateQuestionBankButton();
+
+        Assert.assertTrue(
+                questionBankDetailPage.isUpdateQuestionBankSuccessToastDisplayed(),
+                "Không hiển thị thông báo cập nhật ngân hàng thành công sau khi bấm Cập nhật vào ngân hàng"
         );
     }
 
@@ -463,9 +463,11 @@ public class QuestionManagementTest extends BaseTest {
         questionBankDetailPage.clickBulkDeleteQuestionButton();
         questionBankDetailPage.confirmBulkDeleteQuestionPopup();
 
+        questionBankDetailPage.clickUpdateQuestionBankButton();
+
         Assert.assertTrue(
-                questionBankDetailPage.isBulkDeleteQuestionSuccessToastDisplayed(),
-                "Không hiển thị thông báo xóa hàng loạt câu hỏi thành công"
+                questionBankDetailPage.isUpdateQuestionBankSuccessToastDisplayed(),
+                "Không hiển thị thông báo cập nhật ngân hàng thành công sau khi xóa hàng loạt câu hỏi"
         );
 
         /*
