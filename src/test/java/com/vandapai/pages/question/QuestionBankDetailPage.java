@@ -8,6 +8,8 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import java.time.Duration;
+import java.util.List;
+
 import org.openqa.selenium.support.ui.Select;
 public class QuestionBankDetailPage extends BasePage {
 
@@ -838,4 +840,87 @@ public class QuestionBankDetailPage extends BasePage {
 
         sleep(1500);
     }
+    public String getFirstQuestionContent() {
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        WebElement questionContent = wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("(//div[contains(@class,'question-content')])[1]")
+        ));
+
+        return questionContent.getText().trim();
+    }
+
+    public boolean isAnyQuestionMarkedAsUnsaved() {
+        try {
+            List<WebElement> unsavedLabels = driver.findElements(
+                    By.xpath("//*[contains(text(),'Chưa lưu')]")
+            );
+            return unsavedLabels.size() > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    public boolean isLevelCountUpdated() {
+        try {
+            WebElement hardCount = driver.findElement(
+                    By.xpath("//button[contains(.,'Khó')]")
+            );
+
+            String text = hardCount.getText(); // ví dụ: "Khó (10)"
+            int count = Integer.parseInt(text.replaceAll("\\D+", ""));
+
+            return count > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+
+
+    // ===== WAIT LOAD =====
+    public boolean waitForQuestionListLoaded() {
+        try {
+            wait.until(ExpectedConditions.visibilityOfElementLocated(
+                    By.xpath("//div[contains(@class,'question')]")
+            ));
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+
+
+    // ===== COUNT =====
+    public int getHardQuestionCount() {
+        try {
+            // Cách 1: Dùng id="countHard" bạn vừa cung cấp
+            WebElement hardCountElement = wait.until(
+                    ExpectedConditions.visibilityOfElementLocated(By.id("countHard"))
+            );
+            String text = hardCountElement.getText().trim();
+
+            // Nếu text là "10" hoặc "(10)" hoặc "Khó (10)"
+            int count = Integer.parseInt(text.replaceAll("\\D+", ""));
+
+            System.out.println("HARD QUESTION COUNT = " + count);
+            return count;
+
+        } catch (Exception e) {
+            System.out.println("Không lấy được số lượng câu hỏi Khó: " + e.getMessage());
+
+            // Fallback: thử cách cũ
+            try {
+                WebElement hard = wait.until(ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("//button[contains(.,'Khó')]")
+                ));
+                String text = hard.getText();
+                return Integer.parseInt(text.replaceAll("\\D+", ""));
+            } catch (Exception ex) {
+                return 0;
+            }
+        }
+    }
+
+
 }

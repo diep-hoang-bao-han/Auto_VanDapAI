@@ -36,7 +36,7 @@ public class ExamManagementTest extends BaseTest {
     }
 
     @Test(priority = 1)
-    public void AT_QLDT_001_NavigateToCreateExamSuccessfully() {
+        public void AT_QLDT_001_NavigateToCreateExamSuccessfully() {
         ExamManagementPage examManagementPage = goToExamManagementPage();
         ExamCreatePage examCreatePage = new ExamCreatePage(driver);
 
@@ -356,9 +356,9 @@ public class ExamManagementTest extends BaseTest {
 
         String examSetName = examManagementPage.generateExamSetName("AUTO_UPDATE_EXAM");
 
-        /*
-         * Tạo bộ đề mới để đảm bảo bộ đề chưa được sử dụng trong ca thi.
-         */
+
+        //Tạo bộ đề mới để đảm bảo bộ đề chưa được sử dụng trong ca thi.
+
         examManagementPage.clickCreateExamButton();
 
         Assert.assertTrue(
@@ -389,10 +389,6 @@ public class ExamManagementTest extends BaseTest {
                 "Hệ thống chưa tạo bộ đề thành công thật sự"
         );
 
-        /*
-         * Do search đang lỗi, mở bộ đề đầu tiên trong danh sách.
-         * Theo luồng hiện tại, bộ đề vừa tạo sẽ nằm đầu danh sách.
-         */
         examManagementPage.openFirstExamSetCard();
 
         Assert.assertTrue(
@@ -400,9 +396,6 @@ public class ExamManagementTest extends BaseTest {
                 "Không mở được màn hình chi tiết bộ đề vừa tạo"
         );
 
-        /*
-         * Mở mã đề đầu tiên trong bộ đề.
-         */
         examDetailPage.openFirstExamCodeCard();
 
         Assert.assertTrue(
@@ -410,10 +403,6 @@ public class ExamManagementTest extends BaseTest {
                 "Không hiển thị panel Biên tập Mã đề"
         );
 
-        /*
-         * Cập nhật mã đề và nội dung câu hỏi đầu tiên.
-         * Mã đề dùng số random để hạn chế trùng với 101, 102.
-         */
         String newExamCodeName = "9" + (System.currentTimeMillis() % 10000);
         String newFirstQuestionContent = "Data warehouse là gì?";
 
@@ -426,9 +415,6 @@ public class ExamManagementTest extends BaseTest {
                 "Không hiển thị thông báo lưu thay đổi mã đề thành công"
         );
 
-        /*
-         * Refresh lại trang chi tiết bộ đề, mở lại mã đề đầu tiên để kiểm tra dữ liệu đã lưu.
-         */
         driver.navigate().refresh();
 
         Assert.assertTrue(
@@ -452,9 +438,6 @@ public class ExamManagementTest extends BaseTest {
 
         String examSetName = examManagementPage.generateExamSetName("AUTO_APPROVE_EXAM");
 
-        /*
-         * Tạo bộ đề mới có ít nhất 2 mã đề để duyệt hàng loạt.
-         */
         examManagementPage.clickCreateExamButton();
 
         Assert.assertTrue(
@@ -485,10 +468,6 @@ public class ExamManagementTest extends BaseTest {
                 "Hệ thống chưa tạo bộ đề thành công thật sự"
         );
 
-        /*
-         * Do search đang lỗi, mở bộ đề đầu tiên trong danh sách.
-         * Bộ đề vừa tạo thường nằm ở đầu bảng.
-         */
         examManagementPage.openFirstExamSetCard();
 
         Assert.assertTrue(
@@ -501,16 +480,10 @@ public class ExamManagementTest extends BaseTest {
                 "Trạng thái ban đầu của bộ đề không phải CHƯA DUYỆT"
         );
 
-        /*
-         * Chọn tất cả mã đề và duyệt hàng loạt.
-         */
         examDetailPage.selectAllExamCodes();
         examDetailPage.clickApproveAllExamCodesButton();
         examDetailPage.confirmApproveAllExamCodesPopup();
 
-        /*
-         * Refresh để kiểm tra trạng thái cuối cùng được lưu thật.
-         */
         driver.navigate().refresh();
 
         Assert.assertTrue(
@@ -532,9 +505,6 @@ public class ExamManagementTest extends BaseTest {
 
         String examSetName = examManagementPage.generateExamSetName("AUTO_DELETE_CODES_EXAM");
 
-        /*
-         * Tạo bộ đề mới có ít nhất 2 mã đề để kiểm tra xóa hàng loạt mã đề.
-         */
         examManagementPage.clickCreateExamButton();
 
         Assert.assertTrue(
@@ -565,10 +535,6 @@ public class ExamManagementTest extends BaseTest {
                 "Hệ thống chưa tạo bộ đề thành công thật sự"
         );
 
-        /*
-         * Do search đang lỗi, mở bộ đề đầu tiên trong danh sách.
-         * Bộ đề vừa tạo thường nằm đầu bảng.
-         */
         examManagementPage.openFirstExamSetCard();
 
         Assert.assertTrue(
@@ -576,9 +542,6 @@ public class ExamManagementTest extends BaseTest {
                 "Không mở được màn hình chi tiết bộ đề vừa tạo"
         );
 
-        /*
-         * Chọn tất cả mã đề và xóa hàng loạt.
-         */
         examDetailPage.selectAllExamCodes();
         examDetailPage.clickDeleteAllExamCodesButton();
         examDetailPage.confirmDeleteExamCodesPopup();
@@ -588,9 +551,6 @@ public class ExamManagementTest extends BaseTest {
                 "Không hiển thị thông báo xóa mã đề thành công"
         );
 
-        /*
-         * Quay lại danh sách bộ đề và kiểm tra cột số mã đề của dòng đầu tiên đã về 0.
-         */
         examManagementPage.openExamSetListPage();
 
         Assert.assertTrue(

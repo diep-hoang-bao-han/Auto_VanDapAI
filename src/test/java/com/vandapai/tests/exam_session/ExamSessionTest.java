@@ -117,14 +117,18 @@ public class ExamSessionTest extends BaseTest {
     public void AT_QLCT_008_CreateExamSessionSuccessfullyEndToEnd() {
         String sessionName = "AUTO_CA_THI_" + System.currentTimeMillis();
 
-        // Chủ động chỉnh ở đây, muốn test 5/10/20 SV thì đổi 1 dòng này
         int studentCount = 30;
 
         examSessionPage.clickCreateSessionButton();
 
         ExamSessionCreatePage createPage = new ExamSessionCreatePage(driver);
         createPage.waitUntilCreatePageOpened();
-        createPage.createSessionEndToEnd(sessionName, studentCount);
+        createPage.createSessionEndToEnd(
+                sessionName,
+                "Phòng A101",
+                studentCount,
+                "CK101"
+        );
 
         examSessionPage = new ExamSessionManagementPage(driver);
         examSessionPage.waitUntilLoaded();
