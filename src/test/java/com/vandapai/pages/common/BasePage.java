@@ -11,19 +11,30 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
 
+/**
+ * BasePage: Lớp cha cho tất cả các Page Object.
+ * Cung cấp các phương thức tiện ích: wait, scroll, click, type, get toast text, sleep.
+ */
 public class BasePage {
     protected final WebDriver driver;
     protected final WebDriverWait wait;
 
     public BasePage(WebDriver driver) {
         this.driver = driver;
+        // WebDriverWait mặc định 20 giây
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(20));
     }
 
+    /**
+     * Tạo WebDriverWait với số giây tùy chỉnh.
+     */
     protected WebDriverWait waitSeconds(int seconds) {
         return new WebDriverWait(driver, Duration.ofSeconds(seconds));
     }
 
+    /**
+     * Cuộn đến element (center màn hình).
+     */
     protected void scrollToElement(WebElement element) {
         ((JavascriptExecutor) driver).executeScript(
                 "arguments[0].scrollIntoView({block:'center', inline:'center'});",
@@ -31,6 +42,12 @@ public class BasePage {
         );
     }
 
+    /**
+     * Click vào element với nhiều fallback:
+     * - Đợi element clickable rồi click thường.
+     * - Nếu lỗi, thử Actions.
+     * - Nếu vẫn lỗi, dùng JS click.
+     */
     protected void clickElement(WebElement element) {
         try {
             wait.until(ExpectedConditions.elementToBeClickable(element));
@@ -44,12 +61,19 @@ public class BasePage {
         }
     }
 
+    /**
+     * Click vào element thông qua locator.
+     * - Tìm element, scroll đến, sau đó click bằng clickElement(WebElement).
+     */
     protected void clickElement(By locator) {
         WebElement element = wait.until(ExpectedConditions.presenceOfElementLocated(locator));
         scrollToElement(element);
         clickElement(element);
     }
 
+    /**
+     * Nhập text vào input (có clear nội dung cũ bằng Ctrl+A + Backspace).
+     */
     protected void typeText(WebElement input, String value) {
         scrollToElement(input);
 
@@ -62,15 +86,21 @@ public class BasePage {
         sleep(300);
     }
 
+    /**
+     * Lấy text của toàn bộ body + toast message (nếu có).
+     * Dùng JS để lấy .global-toast-message.
+     */
     protected String getPageAndToastText() {
         String bodyText = "";
         String toastText = "";
 
+        // Lấy text của body
         try {
             bodyText = driver.findElement(By.tagName("body")).getText();
         } catch (Exception ignored) {
         }
 
+        // Lấy text của toast message (nếu có)
         try {
             Object textObj = ((JavascriptExecutor) driver).executeScript(
                     "let items = document.querySelectorAll('.global-toast-message');" +
@@ -87,10 +117,16 @@ public class BasePage {
         return result;
     }
 
+    /**
+     * Chờ user nhìn thấy toast (sleep 2 giây).
+     */
     public void waitForUserToSeeToast() {
         sleep(2000);
     }
 
+    /**
+     * Sleep theo milliseconds, bắt InterruptedException.
+     */
     protected void sleep(int milliseconds) {
         try {
             Thread.sleep(milliseconds);

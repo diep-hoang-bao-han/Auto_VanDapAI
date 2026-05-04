@@ -10,12 +10,28 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
 
+/**
+ * ExamDetailPage: Xử lý các thao tác trên màn hình Chi tiết bộ đề thi.
+ * Bao gồm: xem danh sách mã đề, chỉnh sửa mã đề, duyệt mã đề, xóa mã đề.
+ */
 public class ExamDetailPage extends BasePage {
 
+    // =========================
+    // CONSTRUCTOR
+    // =========================
     public ExamDetailPage(WebDriver driver) {
         super(driver);
     }
 
+    // =========================
+    // VERIFICATION METHODS - CHECK PAGE DISPLAY
+    // =========================
+
+    /**
+     * Kiểm tra xem có đang ở màn hình Chi tiết bộ đề hay không.
+     * - URL chứa "/lecturer/exam-codes/" và không chứa "/create".
+     * - Body text chứa các từ khóa đặc trưng (Mã đề, Danh sách mã đề, Câu hỏi...).
+     */
     public boolean isExamSetDetailPageDisplayed() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
@@ -42,6 +58,9 @@ public class ExamDetailPage extends BasePage {
         });
     }
 
+    /**
+     * Kiểm tra chi tiết bộ đề hiển thị đúng với tên bộ đề cụ thể.
+     */
     public boolean isExamSetDetailDisplayed(String examSetName) {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
@@ -70,19 +89,21 @@ public class ExamDetailPage extends BasePage {
     }
 
     // =========================
-// LOCATORS - EDIT EXAM CODE
-// =========================
-
+    // LOCATORS - EDIT EXAM CODE
+    // =========================
     private final By firstExamCodeCard = By.xpath("//*[@id='cardGrid']/div[1]");
     private final By examCodeNameInput = By.id("examCodeNameInput");
     private final By firstQuestionTextarea = By.xpath("//*[@id='questionEditorList']/div[1]/textarea");
     private final By saveCodeButton = By.id("btnSaveCode");
     private final By toastMessage = By.cssSelector("span.global-toast-message");
 
-// =========================
-// ACTIONS - EDIT EXAM CODE
-// =========================
+    // =========================
+    // ACTIONS - EDIT EXAM CODE
+    // =========================
 
+    /**
+     * Mở card mã đề đầu tiên để chỉnh sửa.
+     */
     public void openFirstExamCodeCard() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
@@ -100,6 +121,9 @@ public class ExamDetailPage extends BasePage {
         shortWait.until(ExpectedConditions.visibilityOfElementLocated(examCodeNameInput));
     }
 
+    /**
+     * Kiểm tra panel biên tập mã đề hiển thị (input tên mã đề, textarea câu hỏi, nút Lưu).
+     */
     public boolean isExamCodeEditorDisplayed() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
@@ -118,6 +142,10 @@ public class ExamDetailPage extends BasePage {
         });
     }
 
+    /**
+     * Cập nhật tên mã đề.
+     * - Thử sendKeys thông thường, nếu không được thì dùng JS set value.
+     */
     public void updateExamCodeName(String newExamCodeName) {
         WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(examCodeNameInput));
 
@@ -142,6 +170,10 @@ public class ExamDetailPage extends BasePage {
         }
     }
 
+    /**
+     * Cập nhật nội dung câu hỏi đầu tiên.
+     * - Thử sendKeys thông thường, nếu không được thì dùng JS set value.
+     */
     public void updateFirstQuestionContent(String newQuestionContent) {
         WebElement textarea = wait.until(ExpectedConditions.visibilityOfElementLocated(firstQuestionTextarea));
 
@@ -166,6 +198,9 @@ public class ExamDetailPage extends BasePage {
         }
     }
 
+    /**
+     * Click nút Lưu mã đề và xử lý popup xác nhận.
+     */
     public void clickSaveCodeButton() {
         WebElement button = wait.until(ExpectedConditions.presenceOfElementLocated(saveCodeButton));
 
@@ -187,9 +222,13 @@ public class ExamDetailPage extends BasePage {
         clickConfirmSaveCodePopup();
     }
 
+    /**
+     * Click nút Xác nhận trên popup lưu thay đổi mã đề.
+     */
     public void clickConfirmSaveCodePopup() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
+        // Đợi popup xác nhận hiển thị
         shortWait.until(driver -> {
             try {
                 String bodyText = driver.findElement(By.tagName("body")).getText();
@@ -221,6 +260,9 @@ public class ExamDetailPage extends BasePage {
         sleep(2500);
     }
 
+    /**
+     * Kiểm tra thông báo lưu mã đề thành công.
+     */
     public boolean isSaveExamCodeSuccessDisplayed() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
@@ -248,6 +290,9 @@ public class ExamDetailPage extends BasePage {
         });
     }
 
+    /**
+     * Kiểm tra dữ liệu mã đề đã được cập nhật đúng sau khi lưu.
+     */
     public boolean isEditedExamCodeDataDisplayed(String expectedExamCodeName, String expectedQuestionContent) {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
@@ -274,11 +319,17 @@ public class ExamDetailPage extends BasePage {
         });
     }
 
+    // =========================
+    // LOCATORS & ACTIONS - APPROVE EXAM CODES
+    // =========================
     private final By globalConfirmAcceptButton = By.id("globalConfirmAccept");
     private final By selectAllExamCodesCheckbox = By.id("selectAllCodes");
     private final By approveAllExamCodesButton = By.xpath("//*[@id='bulkBar']/button[1]");
     private final By examSetApprovalBadge = By.id("examSetApprovalBadge");
 
+    /**
+     * Kiểm tra trạng thái bộ đề là "CHƯA DUYỆT".
+     */
     public boolean isExamSetUnapprovedStatusDisplayed() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
@@ -300,6 +351,9 @@ public class ExamDetailPage extends BasePage {
         });
     }
 
+    /**
+     * Tick checkbox "Chọn tất cả mã đề".
+     */
     public void selectAllExamCodes() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
@@ -341,6 +395,9 @@ public class ExamDetailPage extends BasePage {
         }
     }
 
+    /**
+     * Click nút "Duyệt tất cả mã đề".
+     */
     public void clickApproveAllExamCodesButton() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
@@ -360,6 +417,9 @@ public class ExamDetailPage extends BasePage {
         sleep(1000);
     }
 
+    /**
+     * Xác nhận duyệt tất cả mã đề trên popup.
+     */
     public void confirmApproveAllExamCodesPopup() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
@@ -382,6 +442,9 @@ public class ExamDetailPage extends BasePage {
         sleep(3000);
     }
 
+    /**
+     * Kiểm tra trạng thái bộ đề là "ĐÃ DUYỆT" sau khi duyệt thành công.
+     */
     public boolean isExamSetApprovedStatusDisplayed() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(30));
 
@@ -403,7 +466,14 @@ public class ExamDetailPage extends BasePage {
         });
     }
 
+    // =========================
+    // LOCATORS & ACTIONS - DELETE EXAM CODES
+    // =========================
     private final By deleteAllExamCodesButton = By.xpath("//*[@id='bulkBar']/button[2]");
+
+    /**
+     * Click nút "Xóa tất cả mã đề".
+     */
     public void clickDeleteAllExamCodesButton() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
@@ -423,6 +493,9 @@ public class ExamDetailPage extends BasePage {
         sleep(1000);
     }
 
+    /**
+     * Xác nhận xóa mã đề trên popup.
+     */
     public void confirmDeleteExamCodesPopup() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
@@ -445,6 +518,9 @@ public class ExamDetailPage extends BasePage {
         sleep(3000);
     }
 
+    /**
+     * Kiểm tra thông báo xóa mã đề thành công.
+     */
     public boolean isDeleteExamCodesSuccessDisplayed() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 

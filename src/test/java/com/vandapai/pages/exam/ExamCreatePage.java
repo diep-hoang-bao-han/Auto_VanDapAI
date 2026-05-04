@@ -13,12 +13,22 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
 
+/**
+ * ExamCreatePage: Xử lý các thao tác trên màn hình Tạo đề thi.
+ * Kế thừa BasePage để dùng chung driver, wait, click, scroll,...
+ */
 public class ExamCreatePage extends BasePage {
 
+    // =========================
+    // CONSTRUCTOR
+    // =========================
     public ExamCreatePage(WebDriver driver) {
         super(driver);
     }
 
+    // =========================
+    // LOCATORS
+    // =========================
     private final By proceedButton = By.id("btnSubmit");
 
     private final By subjectDropdown = By.id("subjectId");
@@ -41,6 +51,15 @@ public class ExamCreatePage extends BasePage {
     private final By globalConfirmAcceptButton = By.cssSelector("#globalConfirmBackdrop.open[aria-hidden='false'] #globalConfirmAccept");
     private final By globalConfirmCancelButton = By.cssSelector("#globalConfirmBackdrop.open[aria-hidden='false'] #globalConfirmCancel");
 
+    // =========================
+    // VERIFICATION METHODS
+    // =========================
+
+    /**
+     * Kiểm tra xem có đang ở màn hình Tạo đề thi hay không.
+     * - URL chứa "/lecturer/exam-codes/create".
+     * - Body text chứa "Tạo đề thi".
+     */
     public boolean isCreateExamPageDisplayed() {
         return wait.until(driver -> {
             String currentUrl = driver.getCurrentUrl();
@@ -51,6 +70,13 @@ public class ExamCreatePage extends BasePage {
         });
     }
 
+    /**
+     * Kiểm tra form tạo đề thi hiển thị đầy đủ các phần.
+     * - Thông tin cơ bản (Môn học, Năm học...)
+     * - Nguồn câu hỏi
+     * - Ma trận
+     * - Nút tạo đề
+     */
     public boolean isCreateExamFormDisplayed() {
         return wait.until(driver -> {
             String bodyText = driver.findElement(By.tagName("body")).getText();
@@ -80,6 +106,15 @@ public class ExamCreatePage extends BasePage {
         });
     }
 
+    // =========================
+    // ACTION METHODS - STEP 1: CHỌN MÔN HỌC
+    // =========================
+
+    /**
+     * Chọn môn học theo value (ví dụ "1").
+     * - Dùng Select nếu được, nếu không dùng JS set value.
+     * - Đợi form load lại (xuất hiện input examSetName, academicYear, nguồn câu hỏi).
+     */
     public void selectSubjectByValue(String subjectValue) {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(30));
 
@@ -93,6 +128,7 @@ public class ExamCreatePage extends BasePage {
             Select select = new Select(dropdown);
             select.selectByValue(subjectValue);
         } catch (Exception e) {
+            // Fallback: set value bằng JS và trigger change event
             ((JavascriptExecutor) driver).executeScript(
                     "arguments[0].value = arguments[1];" +
                             "arguments[0].dispatchEvent(new Event('input', { bubbles: true }));" +
@@ -102,6 +138,7 @@ public class ExamCreatePage extends BasePage {
             );
         }
 
+        // Đợi form cập nhật: selected value đúng và các input khác hiển thị
         shortWait.until(driver -> {
             try {
                 String actualValue = driver.findElement(subjectDropdown).getAttribute("value");
@@ -130,6 +167,13 @@ public class ExamCreatePage extends BasePage {
         sleep(1000);
     }
 
+    // =========================
+    // ACTION METHODS - STEP 2: NHẬP THÔNG TIN CƠ BẢN
+    // =========================
+
+    /**
+     * Để trống Mã bộ đề (clear input).
+     */
     public void leaveExamSetNameEmpty() {
         WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(examSetNameInput));
         scrollToElement(input);
@@ -142,6 +186,11 @@ public class ExamCreatePage extends BasePage {
         sleep(500);
     }
 
+    /**
+     * Nhập Mã bộ đề.
+     * - Thử sendKeys thông thường, nếu không được thì dùng JS set value.
+     * - Kiểm tra lại giá trị thực tế, nếu sai thì throw exception.
+     */
     public void enterExamSetName(String examSetName) {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
@@ -190,6 +239,10 @@ public class ExamCreatePage extends BasePage {
         }
     }
 
+    /**
+     * Nhập Năm học (định dạng YYYY-YYYY).
+     * - Tương tự enterExamSetName, có fallback JS và kiểm tra.
+     */
     public void enterAcademicYear(String academicYear) {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
@@ -238,6 +291,9 @@ public class ExamCreatePage extends BasePage {
         }
     }
 
+    /**
+     * Chọn Học kỳ 1 (button data-value='HK1').
+     */
     public void selectSemesterHK1() {
         WebElement hk1Button = wait.until(ExpectedConditions.elementToBeClickable(
                 By.xpath("//button[@data-value='HK1']")
@@ -246,11 +302,20 @@ public class ExamCreatePage extends BasePage {
         scrollToElement(hk1Button);
         clickElement(hk1Button);
 
+        // Đợi value được cập nhật
         wait.until(driver -> "HK1".equals(
                 ((JavascriptExecutor) driver).executeScript("return document.getElementById('semester').value;")
         ));
     }
 
+    // =========================
+    // ACTION METHODS - STEP 3: CHỌN NGUỒN NGÂN HÀNG CÂU HỎI
+    // =========================
+
+    /**
+     * Chọn nguồn ngân hàng câu hỏi đầu tiên có sẵn.
+     * - Lấy select element, kiểm tra có option, chọn index 0 (có fallback JS).
+     */
     public void selectFirstAvailableQuestionBankSource() {
         WebElement sourceSelect = wait.until(ExpectedConditions.presenceOfElementLocated(sourceBanksSelect));
         scrollToElement(sourceSelect);
@@ -269,6 +334,7 @@ public class ExamCreatePage extends BasePage {
             Select select = new Select(sourceSelect);
             select.selectByIndex(0);
         } catch (Exception e) {
+            // Fallback: JS select first option
             ((JavascriptExecutor) driver).executeScript(
                     "const select = arguments[0];" +
                             "const firstValue = select.options[0].value;" +
@@ -285,10 +351,21 @@ public class ExamCreatePage extends BasePage {
         sleep(1000);
     }
 
+    // =========================
+    // ACTION METHODS - STEP 4: MA TRẬN ĐỀ THI
+    // =========================
+
+    /**
+     * Cấu hình ma trận đề thi hợp lệ mặc định: 1-1-1 câu, 2-3-5 điểm.
+     */
     public void configValidExamMatrix() {
         configExamMatrix("1", "1", "1", "2", "3", "5");
     }
 
+    /**
+     * Cấu hình ma trận đề thi với số câu và số điểm nhập vào.
+     * - Sử dụng nút + - để tăng/giảm giá trị (có fallback set trực tiếp nếu +/- không hoạt động).
+     */
     public void configExamMatrix(String easyCount, String mediumCount, String hardCount,
                                  String easyScore, String mediumScore, String hardScore) {
         setNumberByPlusMinusButtons(easyCountInput, easyCount);
@@ -302,6 +379,14 @@ public class ExamCreatePage extends BasePage {
         sleep(1000);
     }
 
+    // =========================
+    // ACTION METHODS - STEP 5: CẤU HÌNH MÃ ĐỀ
+    // =========================
+
+    /**
+     * Nhập số lượng mã đề cần tạo.
+     * - Tương tự enterExamSetName, có fallback JS và kiểm tra.
+     */
     public void enterNumberOfExamCodes(String number) {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
@@ -349,6 +434,15 @@ public class ExamCreatePage extends BasePage {
         }
     }
 
+    // =========================
+    // UTILITY & HELPER METHODS
+    // =========================
+
+    /**
+     * Refresh lại trang Tạo đề thi.
+     * - Đợi URL chứa "/lecturer/exam-codes/create".
+     * - Đợi các input cơ bản hiển thị.
+     */
     public void refreshCreateExamPage() {
         driver.navigate().refresh();
 
@@ -361,6 +455,10 @@ public class ExamCreatePage extends BasePage {
         sleep(1000);
     }
 
+    /**
+     * Tick checkbox "Cho phép câu hỏi trùng lặp giữa các mã đề".
+     * - Dùng JS để check, verify lại.
+     */
     public void tickAllowDuplicateQuestionsCheckbox() {
         wait.until(ExpectedConditions.presenceOfElementLocated(allowDuplicateQuestionsCheckbox));
 
@@ -387,6 +485,10 @@ public class ExamCreatePage extends BasePage {
         }
     }
 
+    /**
+     * Click nút "Tiến hành" (tạo đề thi).
+     * - Dùng JS click để tránh bị che khuất.
+     */
     public void clickProceedButton() {
         WebElement button = wait.until(ExpectedConditions.presenceOfElementLocated(proceedButton));
         scrollToElement(button);
@@ -403,6 +505,9 @@ public class ExamCreatePage extends BasePage {
         sleep(1500);
     }
 
+    /**
+     * In ra debug các giá trị của form tạo đề thi.
+     */
     public void printCreateExamFormDebug() {
         Object debug = ((JavascriptExecutor) driver).executeScript(
                 "const ids=['examSetName','academicYear','semester','sourceBanks','easyCount','mediumCount','hardCount','easyScore','mediumScore','hardScore','numberOfVersions','allowDuplicateQuestions','btnSubmit'];" +
@@ -414,6 +519,14 @@ public class ExamCreatePage extends BasePage {
         System.out.println("FORM DEBUG = " + debug);
     }
 
+    // =========================
+    // CONFIRM POPUP ACTIONS
+    // =========================
+
+    /**
+     * Click nút Xác nhận trên popup (globalConfirmAccept).
+     * - Dùng JS click nhiều lần để đảm bảo.
+     */
     public void clickAcceptConfirmPopup() {
         wait.until(ExpectedConditions.presenceOfElementLocated(By.id("globalConfirmAccept")));
 
@@ -429,6 +542,9 @@ public class ExamCreatePage extends BasePage {
         sleep(5000);
     }
 
+    /**
+     * Click nút Hủy trên popup xác nhận.
+     */
     public void clickCancelConfirmPopup() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
@@ -441,6 +557,7 @@ public class ExamCreatePage extends BasePage {
         scrollToElement(cancelButton);
         clickElement(cancelButton);
 
+        // Đợi popup đóng
         shortWait.until(driver -> {
             try {
                 Object isOpen = ((JavascriptExecutor) driver).executeScript(
@@ -457,6 +574,13 @@ public class ExamCreatePage extends BasePage {
         sleep(800);
     }
 
+    // =========================
+    // VERIFICATION METHODS (TOAST, POPUP, SUCCESS)
+    // =========================
+
+    /**
+     * Kiểm tra validation yêu cầu nhập Mã bộ đề.
+     */
     public boolean isExamSetNameRequiredMessageDisplayed() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
@@ -468,6 +592,9 @@ public class ExamCreatePage extends BasePage {
         });
     }
 
+    /**
+     * Kiểm tra validation năm học không hợp lệ.
+     */
     public boolean isAcademicYearInvalidMessageDisplayed() {
         String expectedMessage = "Vui lòng nhập đúng định dạng năm học";
 
@@ -487,6 +614,9 @@ public class ExamCreatePage extends BasePage {
         }
     }
 
+    /**
+     * Kiểm tra nguồn ngân hàng câu hỏi đã hiển thị.
+     */
     public boolean isQuestionBankSourceDisplayed() {
         try {
             WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(15));
@@ -518,6 +648,9 @@ public class ExamCreatePage extends BasePage {
         }
     }
 
+    /**
+     * Kiểm tra Tổng câu và Tổng điểm được cập nhật đúng theo ma trận.
+     */
     public boolean isTotalQuestionAndScoreUpdated(String expectedTotalQuestions, String expectedTotalScore) {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
@@ -541,6 +674,9 @@ public class ExamCreatePage extends BasePage {
         });
     }
 
+    /**
+     * Kiểm tra popup xác nhận tạo bộ đề hiển thị (trường hợp tổng điểm = 10).
+     */
     public boolean isCreateExamConfirmPopupDisplayed() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
@@ -579,6 +715,9 @@ public class ExamCreatePage extends BasePage {
         });
     }
 
+    /**
+     * Kiểm tra popup xác nhận khi tổng điểm > 10.
+     */
     public boolean isTotalScoreGreaterThan10ConfirmPopupDisplayed() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
@@ -603,6 +742,9 @@ public class ExamCreatePage extends BasePage {
         });
     }
 
+    /**
+     * Kiểm tra popup xác nhận khi tổng điểm < 10.
+     */
     public boolean isTotalScoreLessThan10ConfirmPopupDisplayed() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
@@ -627,6 +769,12 @@ public class ExamCreatePage extends BasePage {
         });
     }
 
+    /**
+     * Kiểm tra tạo bộ đề thành công.
+     * - Popup xác nhận biến mất.
+     * - Có toast thông báo thành công.
+     * - Rời khỏi trang /create.
+     */
     public boolean isCreateExamSuccessfullyDisplayed() {
         WebDriverWait longWait = new WebDriverWait(driver, Duration.ofSeconds(60));
 
@@ -655,6 +803,14 @@ public class ExamCreatePage extends BasePage {
         });
     }
 
+    // =========================
+    // PRIVATE HELPER METHODS (MA TRẬN +/-)
+    // =========================
+
+    /**
+     * Set giá trị cho input số (câu hỏi hoặc điểm) bằng nút + -.
+     * - Nếu +/- không đạt được giá trị mong muốn, set trực tiếp bằng JS.
+     */
     private void setNumberByPlusMinusButtons(By inputLocator, String expectedValue) {
         WebElement input = wait.until(ExpectedConditions.presenceOfElementLocated(inputLocator));
         scrollToElement(input);
@@ -669,6 +825,7 @@ public class ExamCreatePage extends BasePage {
 
         int safety = 0;
 
+        // Click nút + cho đến khi đạt target
         while (currentValue < targetValue && safety < 20) {
             try {
                 WebElement plusButton = driver.findElement(getPlusButtonByInputId(inputId));
@@ -690,6 +847,7 @@ public class ExamCreatePage extends BasePage {
             safety++;
         }
 
+        // Click nút - cho đến khi đạt target
         while (currentValue > targetValue && safety < 40) {
             try {
                 WebElement minusButton = driver.findElement(getMinusButtonByInputId(inputId));
@@ -713,6 +871,7 @@ public class ExamCreatePage extends BasePage {
 
         int finalValue = getIntegerValue(inputLocator);
 
+        // Fallback: set trực tiếp bằng JS nếu +/- không hoạt động
         if (finalValue != targetValue) {
             System.out.println("NÚT +/- KHÔNG SET ĐƯỢC " + inputId + " -> SET TRỰC TIẾP VÀO INPUT");
 
@@ -742,6 +901,9 @@ public class ExamCreatePage extends BasePage {
         }
     }
 
+    /**
+     * Lấy giá trị integer từ input (bỏ qua phần thập phân).
+     */
     private int getIntegerValue(By inputLocator) {
         WebElement input = wait.until(ExpectedConditions.presenceOfElementLocated(inputLocator));
         String rawValue = input.getAttribute("value");
@@ -759,14 +921,23 @@ public class ExamCreatePage extends BasePage {
         return Integer.parseInt(rawValue);
     }
 
+    /**
+     * Tìm nút + tương ứng với inputId.
+     */
     private By getPlusButtonByInputId(String inputId) {
         return By.xpath("//*[@id='" + inputId + "']/ancestor::*[contains(@class,'matrix') or contains(@class,'row') or contains(@class,'item') or contains(@class,'control')][1]//button[normalize-space()='+']");
     }
 
+    /**
+     * Tìm nút - tương ứng với inputId.
+     */
     private By getMinusButtonByInputId(String inputId) {
         return By.xpath("//*[@id='" + inputId + "']/ancestor::*[contains(@class,'matrix') or contains(@class,'row') or contains(@class,'item') or contains(@class,'control')][1]//button[normalize-space()='-']");
     }
 
+    /**
+     * Click vào nút + hoặc - của ma trận (có fallback Actions/JS).
+     */
     private void clickMatrixButton(WebElement button) {
         scrollToElement(button);
 
@@ -781,6 +952,9 @@ public class ExamCreatePage extends BasePage {
         }
     }
 
+    /**
+     * Lấy text của popup xác nhận đang mở.
+     */
     private String getOpenConfirmPopupText() {
         Object textObj = ((JavascriptExecutor) driver).executeScript(
                 "const popup = document.querySelector('#globalConfirmBackdrop.open[aria-hidden=\"false\"]');" +

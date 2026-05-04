@@ -11,12 +11,22 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
 
+/**
+ * ExamManagementPage: Xử lý các thao tác trên màn hình Quản lý đề thi (Danh sách bộ đề).
+ * Bao gồm: tạo bộ đề mới, tìm kiếm, mở chi tiết bộ đề, lấy số lượng mã đề.
+ */
 public class ExamManagementPage extends BasePage {
 
+    // =========================
+    // CONSTRUCTOR
+    // =========================
     public ExamManagementPage(WebDriver driver) {
         super(driver);
     }
 
+    // =========================
+    // LOCATORS
+    // =========================
     private final By createExamButton = By.xpath(
             "//a[@href='/lecturer/exam-codes/create/' and contains(normalize-space(.),'Tạo đề thi')]"
     );
@@ -30,10 +40,31 @@ public class ExamManagementPage extends BasePage {
                     "or contains(@name,'search')]"
     );
 
+    private final By firstExamSetCodeCountCell = By.xpath("//*[@id='examSetTableBody']/tr[1]/td[4]");
+    private final By firstExamSetSearchResultRow = By.xpath("//*[@id='examSetTableBody']/tr[1]");
+
+    // =========================
+    // UTILITY METHODS
+    // =========================
+
+    /**
+     * Tạo tên bộ đề duy nhất bằng cách thêm timestamp.
+     * @param prefix Tiền tố (ví dụ "AUTO_CREATE_EXAM")
+     * @return Tên bộ đề hoàn chỉnh (prefix_timestamp)
+     */
     public String generateExamSetName(String prefix) {
         return prefix + "_" + System.currentTimeMillis();
     }
 
+    // =========================
+    // NAVIGATION METHODS
+    // =========================
+
+    /**
+     * Click nút "Tạo đề thi" để điều hướng sang màn hình Tạo đề thi.
+     * - Nếu link có href thì dùng driver.get, nếu không thì click thông thường.
+     * - Đợi URL chứa "/lecturer/exam-codes/create".
+     */
     public void clickCreateExamButton() {
         WebElement button = wait.until(ExpectedConditions.presenceOfElementLocated(createExamButton));
         scrollToElement(button);
@@ -49,6 +80,12 @@ public class ExamManagementPage extends BasePage {
         wait.until(ExpectedConditions.urlContains("/lecturer/exam-codes/create"));
     }
 
+    /**
+     * Mở trang danh sách bộ đề (không phải chi tiết).
+     * - Xây dựng base URL từ currentUrl.
+     * - Điều hướng đến "/lecturer/exam-codes/".
+     * - Đợi trang load đúng (chứa "Danh sách bộ đề" hoặc "Tạo đề thi").
+     */
     public void openExamSetListPage() {
         String currentUrl = driver.getCurrentUrl();
         String baseUrl;
@@ -88,6 +125,9 @@ public class ExamManagementPage extends BasePage {
         sleep(1500);
     }
 
+    /**
+     * Mở bộ đề đầu tiên trong danh sách (click vào hàng đầu tiên của bảng).
+     */
     public void openFirstExamSetCard() {
         openExamSetListPage();
 
@@ -109,6 +149,14 @@ public class ExamManagementPage extends BasePage {
         sleep(1500);
     }
 
+    // =========================
+    // SEARCH METHODS
+    // =========================
+
+    /**
+     * Tìm kiếm bộ đề theo từ khóa.
+     * - Nhập keyword vào ô tìm kiếm, sau đó nhấn Enter.
+     */
     public void searchExamSet(String keyword) {
         WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(examSearchInput));
         scrollToElement(input);
@@ -122,6 +170,10 @@ public class ExamManagementPage extends BasePage {
         sleep(1500);
     }
 
+    /**
+     * Kiểm tra xem bộ đề có hiển thị trong danh sách kết quả tìm kiếm hay không.
+     * @param keyword Từ khóa cần kiểm tra (thường là tên bộ đề)
+     */
     public boolean isExamSetDisplayedInList(String keyword) {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
@@ -134,6 +186,9 @@ public class ExamManagementPage extends BasePage {
         });
     }
 
+    /**
+     * Mở chi tiết bộ đề bằng cách click vào element chứa tên bộ đề.
+     */
     public void openExamSetDetailByName(String examSetName) {
         WebElement examSetElement = wait.until(ExpectedConditions.elementToBeClickable(
                 By.xpath("//*[contains(normalize-space(.),'" + examSetName + "')]")
@@ -145,58 +200,9 @@ public class ExamManagementPage extends BasePage {
         sleep(1500);
     }
 
-    //   lấy số lượng mã đề ở mã đè vừa tạo
-    private final By firstExamSetCodeCountCell = By.xpath("//*[@id='examSetTableBody']/tr[1]/td[4]");
-    public String getFirstExamSetCodeCountText() {
-        openExamSetListPage();
-
-        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
-
-        WebElement cell = shortWait.until(
-                ExpectedConditions.visibilityOfElementLocated(firstExamSetCodeCountCell)
-        );
-
-        String text = cell.getText().trim();
-
-        System.out.println("FIRST EXAM SET CODE COUNT TEXT = " + text);
-
-        return text;
-    }
-    //    Kiểm tra số mã đề về 0
-    public boolean isFirstExamSetCodeCountZero() {
-        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
-
-        return shortWait.until(driver -> {
-            try {
-                WebElement cell = driver.findElement(firstExamSetCodeCountCell);
-                String text = cell.getText().trim();
-
-                System.out.println("FIRST EXAM SET CODE COUNT TEXT = " + text);
-
-                return text.equals("0")
-                        || text.contains("0 mã")
-                        || text.matches(".*\\b0\\b.*");
-            } catch (Exception e) {
-                return false;
-            }
-        });
-    }
-
-    private final By firstExamSetSearchResultRow = By.xpath("//*[@id='examSetTableBody']/tr[1]");
-//    public void searchExamSet(String keyword) {
-//        WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(examSearchInput));
-//
-//        scrollToElement(input);
-//
-//        input.click();
-//        input.sendKeys(Keys.CONTROL, "a");
-//        input.sendKeys(Keys.BACK_SPACE);
-//        input.sendKeys(keyword);
-//        input.sendKeys(Keys.ENTER);
-//
-//        sleep(1500);
-//    }
-
+    /**
+     * Mở kết quả tìm kiếm đầu tiên (sau khi đã search).
+     */
     public void openFirstExamSetSearchResult() {
         WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
@@ -214,5 +220,52 @@ public class ExamManagementPage extends BasePage {
         }
 
         sleep(1500);
+    }
+
+    // =========================
+    // VERIFICATION METHODS - CODE COUNT
+    // =========================
+
+    /**
+     * Lấy số lượng mã đề của bộ đề đầu tiên trong danh sách (dạng text).
+     * - Mở lại trang danh sách để đảm bảo dữ liệu mới nhất.
+     */
+    public String getFirstExamSetCodeCountText() {
+        openExamSetListPage();
+
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+        WebElement cell = shortWait.until(
+                ExpectedConditions.visibilityOfElementLocated(firstExamSetCodeCountCell)
+        );
+
+        String text = cell.getText().trim();
+
+        System.out.println("FIRST EXAM SET CODE COUNT TEXT = " + text);
+
+        return text;
+    }
+
+    /**
+     * Kiểm tra số lượng mã đề của bộ đề đầu tiên có bằng 0 hay không.
+     * - Dùng cho test case xóa tất cả mã đề.
+     */
+    public boolean isFirstExamSetCodeCountZero() {
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+        return shortWait.until(driver -> {
+            try {
+                WebElement cell = driver.findElement(firstExamSetCodeCountCell);
+                String text = cell.getText().trim();
+
+                System.out.println("FIRST EXAM SET CODE COUNT TEXT = " + text);
+
+                return text.equals("0")
+                        || text.contains("0 mã")
+                        || text.matches(".*\\b0\\b.*");
+            } catch (Exception e) {
+                return false;
+            }
+        });
     }
 }
