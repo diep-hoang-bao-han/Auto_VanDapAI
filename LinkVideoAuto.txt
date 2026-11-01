@@ -1,0 +1,4 @@
+Link chạy Test case chức năng Quản lý Câu hỏi: https://youtu.be/amUBB10O0iU
+Link chạy Test case chức năng Quản lý Đề thi: https://youtu.be/AdApw1iUIPk
+Link chạy Test case chức năng Quản lý Ca thi: https://youtu.be/R5KjJe1UE4c
+Link Kết quả chạy Test case: https://docs.google.com/document/d/1POvsxjQBI5mijdnJLPKCz4WP2w6GHlrKZsulCDJjbYk/edit?usp=sharing
